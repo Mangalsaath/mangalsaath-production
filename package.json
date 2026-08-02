@@ -1,0 +1,55 @@
+{
+  "name": "mangalsaath-launch-edition",
+  "version": "1.6.2",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "prisma generate && prisma db push --skip-generate && next build",
+    "start": "node scripts/start-production.mjs",
+    "check": "node scripts/check-project.mjs",
+    "create-admin": "node scripts/create-admin.mjs",
+    "db:generate": "prisma generate",
+    "db:push": "prisma db push",
+    "db:migrate:json": "node scripts/migrate-json-to-mysql.mjs",
+    "db:backup": "node scripts/backup-database.mjs",
+    "db:relational:migrate": "node scripts/migrate-application-state-to-relational.mjs",
+    "db:relational:verify": "node scripts/verify-relational-core.mjs",
+    "db:auth:verify": "node scripts/verify-relational-auth.mjs",
+    "db:profiles:verify": "node scripts/verify-relational-profiles.mjs",
+    "db:communication:verify": "node scripts/verify-relational-communication.mjs",
+    "db:admin:migrate": "node scripts/migrate-admin-to-relational.mjs",
+    "db:admin:verify": "node scripts/verify-relational-admin.mjs",
+    "db:admin-core:verify": "node scripts/verify-admin-core.mjs",
+    "db:payments:verify": "node scripts/verify-payment-engine.mjs",
+    "db:entitlements:verify": "node scripts/verify-entitlements-checkout.mjs",
+    "verify:launch": "node scripts/verify-launch-readiness.mjs",
+    "verify:production-env": "node scripts/verify-production-env.mjs",
+    "verify:hostinger": "node scripts/verify-hostinger-services.mjs",
+    "prepare:production": "node scripts/initialize-production.mjs",
+    "db:init": "node scripts/initialize-production.mjs",
+    "verify:release": "npm run check && npm run verify:production-env",
+    "verify:lc006-007": "node scripts/verify-lc006-lc007.mjs",
+    "verify:lc008:static": "node scripts/verify-lc008-static.mjs",
+    "verify:lc008:audit03": "node scripts/verify-lc008-audit03.mjs",
+    "verify:lc008:audit04": "node scripts/verify-lc008-audit04.mjs",
+    "deploy:production": "node scripts/deploy-production.mjs",
+    "verify:lc008:audit05": "node scripts/verify-lc008-audit05.mjs",
+    "verify:lc008:audit06": "node scripts/verify-lc008-audit06.mjs",
+    "verify:final-launch": "node scripts/verify-final-launch.mjs"
+  },
+  "dependencies": {
+    "next": "16.2.10",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
+    "@prisma/client": "6.19.0",
+    "prisma": "6.19.0"
+  },
+  "overrides": {
+    "postcss": "8.5.10"
+  },
+  "engines": {
+    "node": ">=20.9.0",
+    "npm": ">=10.0.0"
+  },
+  "devDependencies": {}
+}

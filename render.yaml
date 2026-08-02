@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: mangalsaath
+    runtime: node
+    plan: free
+    buildCommand: npm ci && npm run build
+    startCommand: npm run start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: 20.19.0
+      - key: NEXT_PUBLIC_SITE_URL
+        value: https://mangalsaath.com
+      - key: NEXT_PUBLIC_SUPPORT_EMAIL
+        value: contact@mangalsaath.com
