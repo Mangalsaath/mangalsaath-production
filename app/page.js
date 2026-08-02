@@ -2041,7 +2041,7 @@ export default function Home() {
     <main>
       <header className="topbar premiumTopbar commercialHeader">
         <button
-          className="brand"
+              className="brand brandLogoButton headerLogoButton"
           onClick={() => {
             setView("home");
             setOpenMenu("");
@@ -2049,9 +2049,11 @@ export default function Home() {
           aria-label="Mangalsaath home"
         >
           <img
-            className="brandLogo"
-            src="/mangalsaath-logo.png"
-            alt="Mangalsaath — Meaningful matches. Trusted beginnings."
+                className="brandLogo"
+                src="/mangalsaath-logo.png"
+                alt="Mangalsaath — Meaningful matches. Trusted beginnings."
+                width="320"
+                height="64"
           />
         </button>
         <nav className="mainNav" aria-label="Primary navigation">
@@ -5724,11 +5726,13 @@ export default function Home() {
         className={`siteFooter premiumFooter ${view === "home" ? "homeFooter" : ""}`}
       >
         <div className="footerBrand">
-          <button className="brand" onClick={() => setView("home")}>
+              <button className="brand brandLogoButton footerLogoButton" onClick={() => setView("home")}>
             <img
-              className="brandLogo footerBrandLogo"
-              src="/mangalsaath-logo.png"
-              alt="Mangalsaath — Meaningful matches. Trusted beginnings."
+                  className="brandLogo footerBrandLogo"
+                  src="/mangalsaath-logo.png"
+                  alt="Mangalsaath — Meaningful matches. Trusted beginnings."
+                  width="300"
+                  height="68"
             />
           </button>
           <p>
