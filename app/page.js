@@ -2041,20 +2041,18 @@ export default function Home() {
     <main>
       <header className="topbar premiumTopbar commercialHeader">
         <button
-          className="brand premiumBrand"
+          className="brand"
           onClick={() => {
             setView("home");
             setOpenMenu("");
           }}
           aria-label="Mangalsaath home"
         >
-          <span className="premiumBrandMark" aria-hidden="true">
-            <i>M</i>
-          </span>
-          <b>
-            <strong>Mangalsaath</strong>
-            <small>Meaningful matches. Trusted beginnings.</small>
-          </b>
+          <img
+            className="brandLogo"
+            src="/mangalsaath-logo.png"
+            alt="Mangalsaath — Meaningful matches. Trusted beginnings."
+          />
         </button>
         <nav className="mainNav" aria-label="Primary navigation">
           <button
@@ -2378,9 +2376,6 @@ export default function Home() {
             <div className="heroGlow heroGlowOne"></div>
             <div className="heroGlow heroGlowTwo"></div>
             <div className="premiumHeroCopy">
-              <span className="trustPill">
-                🛡 India-first matrimonial platform
-              </span>
               <h1>
                 Find a life partner with <em>trust, dignity and tradition.</em>
               </h1>
@@ -2388,9 +2383,6 @@ export default function Home() {
                 Create a genuine profile, discover compatible matches and
                 connect respectfully.
               </p>
-              <span className="heroOrnament" aria-hidden="true">
-                <i></i>✦<i></i>
-              </span>
               <div className="actions">
                 <button
                   className="primary heroPrimary"
@@ -5732,9 +5724,12 @@ export default function Home() {
         className={`siteFooter premiumFooter ${view === "home" ? "homeFooter" : ""}`}
       >
         <div className="footerBrand">
-          <button className="brand premiumBrand footerPremiumBrand" onClick={() => setView("home")}>
-            <span className="premiumBrandMark" aria-hidden="true"><i>M</i></span>
-            <b><strong>Mangalsaath</strong><small>Meaningful matches. Trusted beginnings.</small></b>
+          <button className="brand" onClick={() => setView("home")}>
+            <img
+              className="brandLogo footerBrandLogo"
+              src="/mangalsaath-logo.png"
+              alt="Mangalsaath — Meaningful matches. Trusted beginnings."
+            />
           </button>
           <p>
             Meaningful matches, trusted beginnings and respectful connections
