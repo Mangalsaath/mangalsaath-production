@@ -283,14 +283,16 @@ a{color:var(--wine);font-weight:700}.topbar{padding:14px 6%;box-shadow:0 8px 28p
 @media(max-width:650px){.adminSidebar nav{grid-template-columns:1fr 1fr}.adminMetricGrid,.adminCardGrid,.adminEditorGrid,.adminSettingsGrid{grid-template-columns:1fr 1fr}.adminFilters{grid-template-columns:1fr}.adminHeading{display:block}} 
 
 
-/* Homepage logo update */
-.logoBrand{gap:0}
-.brandLogo{display:block;width:auto;object-fit:contain}
-.headerBrandLogo{height:52px;max-width:min(42vw,280px)}
-.footerBrandLogo{height:58px;max-width:min(70vw,320px)}
-.siteFooter .brand.logoBrand{padding:0}
-.siteFooter .brand.logoBrand img{display:block}
+
+
+/* Homepage logo update - premium visible treatment */
+.logoBrand{gap:0;padding:0!important;border-radius:12px;overflow:hidden;background:#fff7ef;box-shadow:0 5px 18px rgba(0,0,0,.18)}
+.brandLogo{display:block;width:auto;object-fit:contain;background:#fff7ef}
+.headerBrandLogo{height:54px;width:250px;max-width:34vw}
+.footerBrandLogo{height:64px;width:300px;max-width:100%}
+.siteFooter .brand.logoBrand{display:inline-flex;padding:0!important;background:#fff7ef;border:1px solid rgba(233,185,92,.55)}
+.premiumTopbar .brand.logoBrand{background:#fff7ef;border:1px solid rgba(233,185,92,.45)}
 @media(max-width:760px){
-  .headerBrandLogo{height:44px;max-width:210px}
-  .footerBrandLogo{height:48px;max-width:240px}
+  .headerBrandLogo{height:46px;width:215px;max-width:52vw}
+  .footerBrandLogo{height:56px;width:260px}
 }
