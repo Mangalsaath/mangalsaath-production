@@ -2053,17 +2053,18 @@ export default function Home() {
     <main>
       <header className="topbar premiumTopbar commercialHeader">
         <button
-          className="brand"
+          className="brand logoBrand"
           onClick={() => {
             setView("home");
             setOpenMenu("");
           }}
           aria-label="Mangalsaath home"
         >
-          <span>म</span>
-          <b>
-            Mangalsaath<small>Meaningful matches. Trusted beginnings.</small>
-          </b>
+          <img
+            src="/mangalsaath-logo-extracted.png"
+            alt="Mangalsaath"
+            className="brandLogo headerBrandLogo"
+          />
         </button>
         <nav className="mainNav" aria-label="Primary navigation">
           <button
@@ -2387,9 +2388,6 @@ export default function Home() {
             <div className="heroGlow heroGlowOne"></div>
             <div className="heroGlow heroGlowTwo"></div>
             <div className="premiumHeroCopy">
-              <span className="trustPill">
-                🛡 India-first matrimonial platform
-              </span>
               <h1>
                 Find a life partner with <em>trust, dignity and tradition.</em>
               </h1>
@@ -5778,9 +5776,16 @@ export default function Home() {
         className={`siteFooter premiumFooter ${view === "home" ? "homeFooter" : ""}`}
       >
         <div className="footerBrand">
-          <button className="brand" onClick={() => setView("home")}>
-            <span>म</span>
-            <b>Mangalsaath</b>
+          <button
+            className="brand logoBrand"
+            onClick={() => setView("home")}
+            aria-label="Mangalsaath home"
+          >
+            <img
+              src="/mangalsaath-logo-extracted.png"
+              alt="Mangalsaath"
+              className="brandLogo footerBrandLogo"
+            />
           </button>
           <p>
             Meaningful matches, trusted beginnings and respectful connections

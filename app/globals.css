@@ -281,3 +281,16 @@ a{color:var(--wine);font-weight:700}.topbar{padding:14px 6%;box-shadow:0 8px 28p
 .adminSectionTitle{display:flex;align-items:center;justify-content:space-between;margin-top:28px}.adminSectionTitle .adminSubheading{margin:0}
 @media(max-width:1100px){.adminShell{grid-template-columns:1fr}.adminSidebar{position:static}.adminSidebar nav{grid-template-columns:repeat(3,1fr)}.adminMetricGrid{grid-template-columns:repeat(3,1fr)}.adminSplit{grid-template-columns:1fr}.adminCardGrid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:650px){.adminSidebar nav{grid-template-columns:1fr 1fr}.adminMetricGrid,.adminCardGrid,.adminEditorGrid,.adminSettingsGrid{grid-template-columns:1fr 1fr}.adminFilters{grid-template-columns:1fr}.adminHeading{display:block}} 
+
+
+/* Homepage logo update */
+.logoBrand{gap:0}
+.brandLogo{display:block;width:auto;object-fit:contain}
+.headerBrandLogo{height:52px;max-width:min(42vw,280px)}
+.footerBrandLogo{height:58px;max-width:min(70vw,320px)}
+.siteFooter .brand.logoBrand{padding:0}
+.siteFooter .brand.logoBrand img{display:block}
+@media(max-width:760px){
+  .headerBrandLogo{height:44px;max-width:210px}
+  .footerBrandLogo{height:48px;max-width:240px}
+}
