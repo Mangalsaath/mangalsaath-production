@@ -40,6 +40,8 @@ const blank = {
   confirmPassword: "",
   gender: "",
   dateOfBirth: "",
+  placeOfBirth: "",
+  timeOfBirth: "",
   maritalStatus: "",
   height: "",
   religion: "",
@@ -72,6 +74,8 @@ const profileKeys = [
   "name",
   "gender",
   "dateOfBirth",
+  "placeOfBirth",
+  "timeOfBirth",
   "maritalStatus",
   "height",
   "religion",
@@ -456,6 +460,8 @@ export default function Home() {
       ["name", "Full name"],
       ["gender", "Gender"],
       ["dateOfBirth", "Date of birth"],
+      ["placeOfBirth", "Place of birth"],
+      ["timeOfBirth", "Time of birth"],
       ["maritalStatus", "Marital status"],
       ["height", "Height"],
       ["religion", "Religion"],
@@ -1623,6 +1629,8 @@ export default function Home() {
         ["firstName", "first name"],
         ["lastName", "surname"],
         ["dateOfBirth", "date of birth"],
+        ["placeOfBirth", "place of birth"],
+        ["timeOfBirth", "time of birth"],
         ["gender", "gender"],
         ["maritalStatus", "marital status"],
         ["height", "height"],
@@ -1655,6 +1663,10 @@ export default function Home() {
         dob.toISOString().slice(0, 10) !== dobText
       )
         return "Please select a valid date of birth.";
+      if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(String(edit.timeOfBirth || "")))
+        return "Please enter a valid time of birth.";
+      if (String(edit.placeOfBirth || "").trim().length > 180)
+        return "Place of birth must be 180 characters or less.";
       const age =
         currentYear -
         dob.getFullYear() -
@@ -2041,20 +2053,17 @@ export default function Home() {
     <main>
       <header className="topbar premiumTopbar commercialHeader">
         <button
-              className="brand brandLogoButton headerLogoButton"
+          className="brand"
           onClick={() => {
             setView("home");
             setOpenMenu("");
           }}
           aria-label="Mangalsaath home"
         >
-          <img
-                className="brandLogo"
-                src="/mangalsaath-logo.png"
-                alt="Mangalsaath — Meaningful matches. Trusted beginnings."
-                width="320"
-                height="64"
-          />
+          <span>म</span>
+          <b>
+            Mangalsaath<small>Meaningful matches. Trusted beginnings.</small>
+          </b>
         </button>
         <nav className="mainNav" aria-label="Primary navigation">
           <button
@@ -2378,6 +2387,9 @@ export default function Home() {
             <div className="heroGlow heroGlowOne"></div>
             <div className="heroGlow heroGlowTwo"></div>
             <div className="premiumHeroCopy">
+              <span className="trustPill">
+                🛡 India-first matrimonial platform
+              </span>
               <h1>
                 Find a life partner with <em>trust, dignity and tradition.</em>
               </h1>
@@ -3510,6 +3522,18 @@ export default function Home() {
               <div>
                 <h3>Essential details</h3>
                 <dl>
+                  {selected.placeOfBirth && (
+                    <>
+                      <dt>Place of birth</dt>
+                      <dd>{selected.placeOfBirth}</dd>
+                    </>
+                  )}
+                  {selected.timeOfBirth && (
+                    <>
+                      <dt>Time of birth</dt>
+                      <dd>{selected.timeOfBirth}</dd>
+                    </>
+                  )}
                   <dt>Marital status</dt>
                   <dd>{selected.maritalStatus}</dd>
                   <dt>Religion</dt>
@@ -3929,6 +3953,34 @@ export default function Home() {
                     </select>
                   </div>
                 </label>
+                <div className="grid2">
+                  <label>
+                    Place of birth<i>*</i>
+                    <input
+                      type="text"
+                      maxLength="180"
+                      placeholder="e.g. Panipat, Haryana"
+                      value={edit.placeOfBirth || ""}
+                      onChange={(e) =>
+                        setEdit({ ...edit, placeOfBirth: e.target.value })
+                      }
+                    />
+                  </label>
+                  <label>
+                    Time of birth<i>*</i>
+                    <input
+                      type="time"
+                      step="60"
+                      value={edit.timeOfBirth || ""}
+                      onChange={(e) =>
+                        setEdit({ ...edit, timeOfBirth: e.target.value })
+                      }
+                    />
+                    <span className="fieldHint">
+                      Use the exact time from birth records, if available.
+                    </span>
+                  </label>
+                </div>
                 <div className="grid2">
                   {editSelect("gender", "Gender", genderOptions)}
                   {editSelect(
@@ -5726,14 +5778,9 @@ export default function Home() {
         className={`siteFooter premiumFooter ${view === "home" ? "homeFooter" : ""}`}
       >
         <div className="footerBrand">
-              <button className="brand brandLogoButton footerLogoButton" onClick={() => setView("home")}>
-            <img
-                  className="brandLogo footerBrandLogo"
-                  src="/mangalsaath-logo.png"
-                  alt="Mangalsaath — Meaningful matches. Trusted beginnings."
-                  width="300"
-                  height="68"
-            />
+          <button className="brand" onClick={() => setView("home")}>
+            <span>म</span>
+            <b>Mangalsaath</b>
           </button>
           <p>
             Meaningful matches, trusted beginnings and respectful connections

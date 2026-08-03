@@ -53,7 +53,7 @@ async function main() {
       for (const profile of profiles) {
         if (!profile?.id || !profile?.userId || !validUserIds.has(String(profile.userId))) continue;
         const data = {
-          userId: String(profile.userId), name: String(profile.name || "Member"), gender: stringOrNull(profile.gender), dateOfBirth: asDate(profile.dateOfBirth), age: intOrNull(profile.age),
+          userId: String(profile.userId), name: String(profile.name || "Member"), gender: stringOrNull(profile.gender), dateOfBirth: asDate(profile.dateOfBirth), placeOfBirth: stringOrNull(profile.placeOfBirth), timeOfBirth: stringOrNull(profile.timeOfBirth), age: intOrNull(profile.age),
           maritalStatus: stringOrNull(profile.maritalStatus), height: intOrNull(profile.height), religion: stringOrNull(profile.religion), caste: stringOrNull(profile.caste),
           subCaste: stringOrNull(profile.subCaste), gotra: stringOrNull(profile.gotra), education: stringOrNull(profile.education), profession: stringOrNull(profile.profession),
           country: stringOrNull(profile.country), state: stringOrNull(profile.state), city: stringOrNull(profile.city), about: stringOrNull(profile.about),

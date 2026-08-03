@@ -81,6 +81,8 @@ model MemberProfile {
   name                  String    @db.VarChar(180)
   gender                String?   @db.VarChar(30)
   dateOfBirth           DateTime?
+  placeOfBirth          String?   @db.VarChar(180)
+  timeOfBirth           String?   @db.VarChar(5)
   age                   Int?
   maritalStatus         String?   @db.VarChar(60)
   height                Int?

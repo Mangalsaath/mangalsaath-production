@@ -51,8 +51,6 @@ a{color:var(--wine);font-weight:700}.topbar{padding:14px 6%;box-shadow:0 8px 28p
 /* v2.1.0 Premium UI & Brand Experience */
 .premiumTopbar{position:sticky;top:0;z-index:40;background:rgba(66,8,29,.97);backdrop-filter:blur(18px);border-bottom:1px solid rgba(238,193,105,.22);box-shadow:0 12px 35px rgba(42,4,18,.18)}
 .premiumTopbar .brand b{color:#fff}.premiumTopbar .brand b small{color:#d9bcc6}.premiumTopbar .brand span{background:linear-gradient(145deg,#f5d58f,#c98b32);color:#4a0a20;box-shadow:0 7px 22px rgba(236,184,82,.25)}
-.brandLogo{display:block;width:clamp(230px,23vw,340px);height:auto;max-height:72px;object-fit:contain;object-position:left center;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none}
-.footerBrandLogo{width:min(100%,320px);height:auto;max-height:82px}
 .premiumTopbar nav button,.premiumTopbar .loginLink{color:#f6e9ee}.premiumTopbar nav button:hover,.premiumTopbar nav button.active{color:#f3ce80}.premiumTopbar nav button.active:after{background:#e9b956}.premiumTopbar .secondary{border-color:#d6b05f;color:#fff;background:transparent}
 .premiumHero{position:relative;display:grid;grid-template-columns:1.02fr .98fr;gap:58px;align-items:center;min-height:720px;padding:72px max(6vw,24px);overflow:hidden;background:linear-gradient(122deg,#fffaf2 0%,#fff4ec 46%,#f7e6e1 100%)}
 .heroGlow{position:absolute;border-radius:50%;filter:blur(2px);pointer-events:none}.heroGlowOne{width:380px;height:380px;left:-160px;top:-120px;background:rgba(213,163,82,.13)}.heroGlowTwo{width:470px;height:470px;right:-180px;bottom:-220px;background:rgba(128,27,55,.12)}
@@ -71,7 +69,7 @@ a{color:var(--wine);font-weight:700}.topbar{padding:14px 6%;box-shadow:0 8px 28p
 .commercialHeader{display:grid;grid-template-columns:auto 1fr auto;gap:28px;align-items:center;padding:12px max(3vw,24px)}
 .mainNav{display:flex;justify-content:center;align-items:center;gap:6px;overflow:visible!important}.mainNav>button,.mainNav>.navDropdown>button{display:flex;align-items:center;gap:6px;white-space:nowrap}.mainNav .navDropdown{position:relative}.mainNav .navDropdown>button span{font-size:15px;color:#e7c371}.megaMenu{position:absolute;top:calc(100% + 16px);left:50%;z-index:90;display:grid;grid-template-columns:1fr 1fr;gap:12px;width:560px;padding:18px;transform:translateX(-50%);border:1px solid rgba(213,174,93,.35);border-radius:18px;background:rgba(255,252,247,.99);box-shadow:0 24px 65px rgba(34,4,15,.28);color:#351520}.megaMenu:before{content:"";position:absolute;top:-7px;left:50%;width:13px;height:13px;transform:translateX(-50%) rotate(45deg);border-left:1px solid #dbc586;border-top:1px solid #dbc586;background:#fffdf8}.megaMenu>div{display:grid;align-content:start;gap:7px}.megaMenu small{padding:5px 10px;color:#9a6a25;font-size:10px;font-weight:900;letter-spacing:.12em}.megaMenu button{display:flex!important;position:relative;flex-direction:column!important;align-items:flex-start!important;gap:4px!important;width:100%;padding:11px 12px!important;border-radius:11px!important;color:#421529!important;text-align:left!important}.megaMenu button:hover{background:#f8ece8!important;color:#811f40!important}.megaMenu button span{color:#816d74!important;font-size:11px!important;font-weight:500!important}.compactMenu{display:grid;grid-template-columns:1fr;width:260px;padding:11px;left:0;transform:none}.compactMenu:before{left:31px}.compactMenu button{flex-direction:row!important;justify-content:space-between!important;align-items:center!important}.compactMenu button b{display:grid;place-items:center;min-width:21px;height:21px;padding:0 5px;border-radius:999px;background:#841f40;color:#fff;font-size:10px}.membershipMenu{width:270px}.iconicAccountArea{display:flex;align-items:center;gap:8px;padding-left:16px;border-left:1px solid rgba(236,196,112,.25)}.authIconButton{display:flex!important;align-items:center!important;gap:9px!important;min-height:46px;padding:8px 15px!important;border-radius:13px!important}.authIconButton span{display:grid;place-items:center;width:27px;height:27px;border-radius:50%;font-size:17px}.authIconButton b{white-space:nowrap;font-size:13px}.loginButton{border:1px solid #d6b05f!important;background:transparent!important;color:#fff!important}.loginButton span{background:rgba(255,255,255,.10)}.registerButton{border:1px solid #efcc7d!important;background:linear-gradient(145deg,#f2cc75,#c98a30)!important;color:#431027!important;box-shadow:0 9px 24px rgba(224,168,61,.25)}.registerButton span{background:rgba(255,255,255,.35)}.iconAction{position:relative!important;display:grid!important;place-items:center!important;width:39px;height:39px;padding:0!important;border:1px solid rgba(239,207,139,.35)!important;border-radius:50%!important;background:rgba(255,255,255,.07)!important;font-size:17px!important}.iconAction>span{position:absolute;right:-4px;top:-5px;display:grid;place-items:center;min-width:18px;height:18px;padding:0 4px;border-radius:999px;background:#edb64c;color:#401024;font-size:9px;font-weight:900}.accountDropdown{position:relative}.profileMenuButton{display:flex!important;align-items:center!important;gap:7px!important;padding:5px 9px 5px 5px!important;border:1px solid rgba(239,207,139,.35)!important;border-radius:999px!important;background:rgba(255,255,255,.07)!important;color:#fff!important}.profileMenuButton i{display:grid;place-items:center;width:32px;height:32px;border-radius:50%;background:linear-gradient(145deg,#f2cc75,#c98a30);color:#431027;font-style:normal;font-weight:900}.accountMenu{right:0;left:auto;top:calc(100% + 15px);transform:none}.accountMenu:before{right:33px;left:auto}.accountMenu .adminOnlyLink{margin-top:4px;border-top:1px solid #eadfd8!important;border-radius:0!important;color:#8a1d40!important}.fourColumnFooter{grid-template-columns:repeat(4,minmax(125px,1fr))!important}
 @media(max-width:1180px){.commercialHeader{grid-template-columns:auto auto}.mainNav{grid-column:1/-1;grid-row:2;justify-content:flex-start;padding-top:8px;border-top:1px solid rgba(236,196,112,.18)}.iconicAccountArea{justify-self:end}.megaMenu{left:0;transform:none}.megaMenu:before{left:35px}.fourColumnFooter{grid-template-columns:repeat(2,1fr)!important}}
-@media(max-width:760px){.commercialHeader{display:flex;flex-wrap:wrap;gap:12px;padding:12px 15px}.commercialHeader .brand{flex:1}.brandLogo{width:clamp(190px,56vw,260px);height:auto;max-height:58px;padding:0;border:0;background:transparent;box-shadow:none}.footerBrandLogo{width:min(100%,280px);height:auto;max-height:72px}.iconicAccountArea{order:2;width:auto;padding-left:0;border-left:0}.mainNav{order:3;width:100%;overflow-x:auto!important;justify-content:flex-start;padding-bottom:5px}.mainNav>button,.mainNav>.navDropdown>button{font-size:12px!important;padding:8px!important}.megaMenu{position:fixed;top:132px;right:12px;left:12px;width:auto;max-height:65vh;overflow-y:auto;transform:none}.megaMenu:before{display:none}.authIconButton{padding:7px 10px!important}.authIconButton b{display:none}.authIconButton span{width:30px;height:30px}.profileMenuButton>span{display:none}.fourColumnFooter{grid-template-columns:1fr!important}}
+@media(max-width:760px){.commercialHeader{display:flex;flex-wrap:wrap;gap:12px;padding:12px 15px}.commercialHeader .brand{flex:1}.iconicAccountArea{order:2;width:auto;padding-left:0;border-left:0}.mainNav{order:3;width:100%;overflow-x:auto!important;justify-content:flex-start;padding-bottom:5px}.mainNav>button,.mainNav>.navDropdown>button{font-size:12px!important;padding:8px!important}.megaMenu{position:fixed;top:132px;right:12px;left:12px;width:auto;max-height:65vh;overflow-y:auto;transform:none}.megaMenu:before{display:none}.authIconButton{padding:7px 10px!important}.authIconButton b{display:none}.authIconButton span{width:30px;height:30px}.profileMenuButton>span{display:none}.fourColumnFooter{grid-template-columns:1fr!important}}
 
 /* v2.3.0 Trust & Verification Center */
 .trustPanel{align-items:flex-start;gap:22px;border:1px solid rgba(157,33,62,.2);background:linear-gradient(135deg,#fffaf2,#fff)}
@@ -283,48 +281,3 @@ a{color:var(--wine);font-weight:700}.topbar{padding:14px 6%;box-shadow:0 8px 28p
 .adminSectionTitle{display:flex;align-items:center;justify-content:space-between;margin-top:28px}.adminSectionTitle .adminSubheading{margin:0}
 @media(max-width:1100px){.adminShell{grid-template-columns:1fr}.adminSidebar{position:static}.adminSidebar nav{grid-template-columns:repeat(3,1fr)}.adminMetricGrid{grid-template-columns:repeat(3,1fr)}.adminSplit{grid-template-columns:1fr}.adminCardGrid{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:650px){.adminSidebar nav{grid-template-columns:1fr 1fr}.adminMetricGrid,.adminCardGrid,.adminEditorGrid,.adminSettingsGrid{grid-template-columns:1fr 1fr}.adminFilters{grid-template-columns:1fr}.adminHeading{display:block}} 
-/* Official Mangalsaath logo containment fix v5 */
-.premiumTopbar .headerLogoButton{
-  display:flex!important;align-items:center!important;justify-content:center!important;
-  flex:0 0 350px!important;width:350px!important;max-width:34vw!important;
-  height:68px!important;min-height:68px!important;max-height:68px!important;
-  padding:0!important;margin:0!important;overflow:hidden!important;
-  border:1px solid rgba(255,225,150,.9)!important;border-radius:15px!important;
-  background:linear-gradient(135deg,#f6d36b 0%,#e8ae35 55%,#c98322 100%)!important;
-  box-shadow:0 9px 24px rgba(224,168,61,.25)!important;
-  position:relative!important;inset:auto!important;
-}
-.premiumTopbar .headerLogoButton .brandLogo{
-  display:block!important;flex:none!important;width:100%!important;max-width:100%!important;
-  height:100%!important;max-height:100%!important;object-fit:contain!important;object-position:center!important;
-  padding:7px 14px!important;margin:0!important;background:transparent!important;
-  border:0!important;box-shadow:none!important;
-}
-.premiumFooter .footerLogoButton{
-  display:flex!important;align-items:center!important;justify-content:center!important;
-  flex:0 0 auto!important;width:320px!important;max-width:100%!important;
-  height:78px!important;min-height:78px!important;max-height:78px!important;
-  padding:0!important;margin:0!important;overflow:hidden!important;
-  border:1px solid rgba(255,225,150,.9)!important;border-radius:15px!important;
-  background:linear-gradient(135deg,#f6d36b 0%,#e8ae35 55%,#c98322 100%)!important;
-  box-shadow:0 9px 24px rgba(224,168,61,.25)!important;
-  position:relative!important;inset:auto!important;
-}
-.premiumFooter .footerLogoButton .footerBrandLogo{
-  display:block!important;flex:none!important;width:100%!important;max-width:100%!important;
-  height:100%!important;max-height:100%!important;object-fit:contain!important;object-position:center!important;
-  padding:8px 15px!important;margin:0!important;background:transparent!important;
-  border:0!important;box-shadow:none!important;
-}
-.premiumFooter .footerBrand{min-width:0!important}
-@media(max-width:760px){
-  .premiumTopbar .headerLogoButton{
-    flex-basis:240px!important;width:240px!important;max-width:calc(100vw - 120px)!important;
-    height:56px!important;min-height:56px!important;max-height:56px!important;border-radius:12px!important;
-  }
-  .premiumTopbar .headerLogoButton .brandLogo{padding:6px 10px!important}
-  .premiumFooter .footerLogoButton{
-    width:260px!important;max-width:100%!important;
-    height:64px!important;min-height:64px!important;max-height:64px!important;
-  }
-}

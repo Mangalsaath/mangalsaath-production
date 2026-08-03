@@ -187,10 +187,12 @@ export async function PUT(request) {
       found = await ensureRelationalProfile(user.id, legacyProfile);
     }
     if (!found) return NextResponse.json({ error: "Your profile was not found." }, { status: 404 });
-    const required = ["firstName", "lastName", "gender", "dateOfBirth", "maritalStatus", "height", "religion", "caste", "education", "profession", "annualCtc", "brothersMarried", "brothersUnmarried", "sistersMarried", "sistersUnmarried", "country", "state", "city", "about"];
+    const required = ["firstName", "lastName", "gender", "dateOfBirth", "placeOfBirth", "timeOfBirth", "maritalStatus", "height", "religion", "caste", "education", "profession", "annualCtc", "brothersMarried", "brothersUnmarried", "sistersMarried", "sistersUnmarried", "country", "state", "city", "about"];
     if (required.some((key) => body[key] === undefined || body[key] === null || !String(body[key]).trim())) return NextResponse.json({ error: "Please complete all essential fields." }, { status: 400 });
     const dob = new Date(`${String(body.dateOfBirth || "")}T00:00:00`);
     if (Number.isNaN(dob.getTime()) || dob.toISOString().slice(0, 10) !== String(body.dateOfBirth || "")) return NextResponse.json({ error: "Please enter a valid date of birth." }, { status: 400 });
+    if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(String(body.timeOfBirth || ""))) return NextResponse.json({ error: "Please enter a valid time of birth." }, { status: 400 });
+    if (String(body.placeOfBirth || "").trim().length > 180) return NextResponse.json({ error: "Place of birth must be 180 characters or less." }, { status: 400 });
     const age = calculateAge(body.dateOfBirth);
     if (age === null || age < 18) return NextResponse.json({ error: "Member must be at least 18 years old." }, { status: 400 });
     const aboutLength = String(body.about || "").trim().length;
@@ -213,7 +215,7 @@ export async function PUT(request) {
     const nullable = (value) => String(value || "").trim() || null;
     const result = await updateRelationalProfile(user.id, {
       profile: {
-        name, gender: nullable(body.gender), dateOfBirth: new Date(body.dateOfBirth), age, maritalStatus: nullable(body.maritalStatus), height,
+        name, gender: nullable(body.gender), dateOfBirth: new Date(body.dateOfBirth), placeOfBirth: nullable(body.placeOfBirth), timeOfBirth: nullable(body.timeOfBirth), age, maritalStatus: nullable(body.maritalStatus), height,
         religion: nullable(body.religion), caste: nullable(body.caste), subCaste: nullable(body.subCaste), gotra: nullable(body.gotra), education: nullable(body.education),
         profession: nullable(body.profession), annualCtc: nullable(body.annualCtc), ...siblingCounts, country: nullable(body.country), state: nullable(body.state), city: nullable(body.city), about: nullable(body.about),
         partnerAgeMin, partnerAgeMax, partnerReligion: nullable(body.partnerReligion), partnerCaste: nullable(body.partnerCaste), partnerLocation: nullable(body.partnerLocation),
@@ -229,10 +231,12 @@ export async function PUT(request) {
   const index = db.profiles.findIndex((profile) => profile.userId === user.id);
   if (index < 0) return NextResponse.json({ error: "Your profile was not found." }, { status: 404 });
 
-  const required = ["firstName", "lastName", "gender", "dateOfBirth", "maritalStatus", "height", "religion", "caste", "education", "profession", "annualCtc", "brothersMarried", "brothersUnmarried", "sistersMarried", "sistersUnmarried", "country", "state", "city", "about"];
+  const required = ["firstName", "lastName", "gender", "dateOfBirth", "placeOfBirth", "timeOfBirth", "maritalStatus", "height", "religion", "caste", "education", "profession", "annualCtc", "brothersMarried", "brothersUnmarried", "sistersMarried", "sistersUnmarried", "country", "state", "city", "about"];
   if (required.some((key) => body[key] === undefined || body[key] === null || !String(body[key]).trim())) return NextResponse.json({ error: "Please complete all essential fields." }, { status: 400 });
   const dob = new Date(`${String(body.dateOfBirth || "")}T00:00:00`);
   if (Number.isNaN(dob.getTime()) || dob.toISOString().slice(0, 10) !== String(body.dateOfBirth || "")) return NextResponse.json({ error: "Please enter a valid date of birth." }, { status: 400 });
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(String(body.timeOfBirth || ""))) return NextResponse.json({ error: "Please enter a valid time of birth." }, { status: 400 });
+  if (String(body.placeOfBirth || "").trim().length > 180) return NextResponse.json({ error: "Place of birth must be 180 characters or less." }, { status: 400 });
   const age = calculateAge(body.dateOfBirth);
   if (age === null || age < 18) return NextResponse.json({ error: "Member must be at least 18 years old." }, { status: 400 });
   const aboutLength = String(body.about || "").trim().length;
@@ -244,7 +248,7 @@ export async function PUT(request) {
   if (siblingFields.some((key) => !Number.isInteger(Number(body[key])) || Number(body[key]) < 0 || Number(body[key]) > 20)) return NextResponse.json({ error: "Please enter each sibling count as a whole number from 0 to 20." }, { status: 400 });
   body.name = `${String(body.firstName || "").trim()} ${String(body.lastName || "").trim()}`.trim();
 
-  const allowed = ["name", "firstName", "lastName", "gender", "dateOfBirth", "maritalStatus", "height", "religion", "caste", "subCaste", "gotra", "education", "profession", "annualCtc", "brothersMarried", "brothersUnmarried", "sistersMarried", "sistersUnmarried", "country", "state", "city", "about", "partnerAgeMin", "partnerAgeMax", "partnerReligion", "partnerCaste", "partnerLocation", "partnerMaritalStatus", "partnerEducation", "partnerProfession", "photos", "primaryPhoto"];
+  const allowed = ["name", "firstName", "lastName", "gender", "dateOfBirth", "placeOfBirth", "timeOfBirth", "maritalStatus", "height", "religion", "caste", "subCaste", "gotra", "education", "profession", "annualCtc", "brothersMarried", "brothersUnmarried", "sistersMarried", "sistersUnmarried", "country", "state", "city", "about", "partnerAgeMin", "partnerAgeMax", "partnerReligion", "partnerCaste", "partnerLocation", "partnerMaritalStatus", "partnerEducation", "partnerProfession", "photos", "primaryPhoto"];
   const updated = { ...db.profiles[index] };
   for (const key of allowed) if (body[key] !== undefined) updated[key] = typeof body[key] === "string" ? body[key].trim() : body[key];
   for (const key of siblingFields) updated[key] = Number(updated[key]);
