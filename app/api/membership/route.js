@@ -6,6 +6,7 @@ import { getPublicSiteSettings } from "@/lib/settings-service";
 import { useRelationalAdmin } from "@/lib/admin-core";
 import { prisma } from "@/lib/prisma";
 import { loadActivePlan, quotePlan } from "@/lib/payment-engine";
+import { ensureFoundingPremium, foundingOfferStatus, FOUNDING_MEMBER_LIMIT } from "@/lib/founding-offer";
 
 const safePlan = (plan) => ({ ...plan });
 
@@ -44,11 +45,21 @@ function couponFor(db, code, planId, userId) {
   return coupon;
 }
 
+function foundingPayload(status, grant = null) {
+  return {
+    active: status.active,
+    limit: FOUNDING_MEMBER_LIMIT,
+    remaining: status.remaining,
+    eligible: grant?.eligible === true,
+    granted: grant?.granted === true || grant?.alreadyGranted === true,
+    planName: grant?.plan?.name || status.plan?.name || "Premium",
+  };
+}
+
 export async function GET(request) {
   const user = await getUser(request);
   if (useRelationalAdmin()) {
     const plans = await prisma.membershipPlan.findMany({ where: { active: true }, include: { features: true }, orderBy: [{ displayOrder: "asc" }, { createdAt: "asc" }] });
-    const coupons = await prisma.coupon.findMany({ where: { active: true }, include: { plans: true }, orderBy: { createdAt: "desc" } });
     const publicPlans = plans.map((plan) => ({
       id: plan.id,
       name: plan.name,
@@ -58,7 +69,26 @@ export async function GET(request) {
       badge: plan.badge,
       features: Object.fromEntries(plan.features.map((feature) => [feature.permissionKey, feature.numericLimit ?? feature.enabled]))
     }));
+
+    const foundingBefore = await foundingOfferStatus();
+    if (!user) {
+      const coupons = foundingBefore.active ? [] : await prisma.coupon.findMany({ where: { active: true }, include: { plans: true }, orderBy: { createdAt: "desc" } });
+      const now = new Date();
+      const publicCoupons = coupons.filter((coupon) => (!coupon.startsAt || coupon.startsAt <= now) && (!coupon.endsAt || coupon.endsAt >= now)).map((coupon) => ({
+        code: coupon.code,
+        discountType: coupon.discountType,
+        discountValue: coupon.discountValue,
+        startAt: coupon.startsAt?.toISOString() || null,
+        endAt: coupon.endsAt?.toISOString() || null,
+        applicablePlanIds: coupon.plans.map((item) => item.planId)
+      }));
+      return NextResponse.json({ plans: publicPlans, coupons: publicCoupons, membership: null, transactions: [], paymentConfig: await publicPaymentConfig(), foundingOffer: foundingPayload(foundingBefore) }, { headers: { "Cache-Control": "no-store" } });
+    }
+
+    const grant = await ensureFoundingPremium(user);
     const now = new Date();
+    const foundingAfter = await foundingOfferStatus();
+    const coupons = foundingAfter.active ? [] : await prisma.coupon.findMany({ where: { active: true }, include: { plans: true }, orderBy: { createdAt: "desc" } });
     const publicCoupons = coupons.filter((coupon) => (!coupon.startsAt || coupon.startsAt <= now) && (!coupon.endsAt || coupon.endsAt >= now)).map((coupon) => ({
       code: coupon.code,
       discountType: coupon.discountType,
@@ -67,7 +97,6 @@ export async function GET(request) {
       endAt: coupon.endsAt?.toISOString() || null,
       applicablePlanIds: coupon.plans.map((item) => item.planId)
     }));
-    if (!user) return NextResponse.json({ plans: publicPlans, coupons: publicCoupons, membership: null, transactions: [], paymentConfig: await publicPaymentConfig() }, { headers: { "Cache-Control": "no-store" } });
     const membership = await prisma.userMembership.findFirst({ where: { userId: user.id, status: "active", OR: [{ expiresAt: null }, { expiresAt: { gt: now } }] }, include: { plan: { include: { features: true } } }, orderBy: { createdAt: "desc" } });
     const transactions = await prisma.paymentTransaction.findMany({ where: { userId: user.id }, orderBy: { createdAt: "desc" }, take: 100 });
     return NextResponse.json({
@@ -75,17 +104,25 @@ export async function GET(request) {
       coupons: publicCoupons,
       membership: membership ? { plan: publicPlans.find((plan) => plan.id === membership.planId) || null, subscription: { ...membership, proofData: undefined } } : null,
       transactions: transactions.map(({ proofData, verificationMetadata, ...transaction }) => ({ ...transaction, hasProof: Boolean(proofData), verificationMetadata: undefined })),
-      paymentConfig: await publicPaymentConfig()
+      paymentConfig: await publicPaymentConfig(),
+      foundingOffer: foundingPayload(foundingAfter, grant)
     }, { headers: { "Cache-Control": "no-store" } });
   }
 
   const db = await readDb();
   const plans = db.plans.filter((plan) => plan.active !== false).sort((a, b) => (a.displayOrder || 0) - (b.displayOrder || 0)).map(safePlan);
-  const coupons = getActiveCoupons(db).map((coupon) => ({ code: coupon.code, discountType: coupon.discountType, discountValue: coupon.discountValue, startAt: coupon.startAt, endAt: coupon.endAt, applicablePlanIds: coupon.applicablePlanIds || [] }));
-  if (!user) return NextResponse.json({ plans, coupons, membership: null, transactions: [], paymentConfig: await publicPaymentConfig(db) }, { headers: { "Cache-Control": "no-store" } });
+  const foundingBefore = await foundingOfferStatus(db);
+  if (!user) {
+    const coupons = foundingBefore.active ? [] : getActiveCoupons(db).map((coupon) => ({ code: coupon.code, discountType: coupon.discountType, discountValue: coupon.discountValue, startAt: coupon.startAt, endAt: coupon.endAt, applicablePlanIds: coupon.applicablePlanIds || [] }));
+    return NextResponse.json({ plans, coupons, membership: null, transactions: [], paymentConfig: await publicPaymentConfig(db), foundingOffer: foundingPayload(foundingBefore) }, { headers: { "Cache-Control": "no-store" } });
+  }
+
+  const grant = await ensureFoundingPremium(user, db);
+  const foundingAfter = await foundingOfferStatus(db);
+  const coupons = foundingAfter.active ? [] : getActiveCoupons(db).map((coupon) => ({ code: coupon.code, discountType: coupon.discountType, discountValue: coupon.discountValue, startAt: coupon.startAt, endAt: coupon.endAt, applicablePlanIds: coupon.applicablePlanIds || [] }));
   const membership = getMembership(db, user.id);
   await writeDb(db);
-  return NextResponse.json({ plans, coupons, membership: { plan: membership.plan, subscription: membership.active || null, usage: membership.usage }, transactions: db.transactions.filter((item) => item.userId === user.id).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)), paymentConfig: await publicPaymentConfig(db) }, { headers: { "Cache-Control": "no-store" } });
+  return NextResponse.json({ plans, coupons, membership: { plan: membership.plan, subscription: membership.active || null, usage: membership.usage }, transactions: db.transactions.filter((item) => item.userId === user.id).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)), paymentConfig: await publicPaymentConfig(db), foundingOffer: foundingPayload(foundingAfter, grant) }, { headers: { "Cache-Control": "no-store" } });
 }
 
 export async function POST(request) {
