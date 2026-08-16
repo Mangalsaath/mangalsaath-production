@@ -19,6 +19,9 @@ async function adminAnalyticsApi(path, options = {}) {
   return data;
 }
 
+const number = (value) => Number(value || 0).toLocaleString("en-IN");
+const rate = (value) => `${Number(value || 0).toFixed(1)}%`;
+
 export default function AdminAnalyticsPortal() {
   const [target, setTarget] = useState(null);
   const [data, setData] = useState(null);
@@ -78,8 +81,8 @@ export default function AdminAnalyticsPortal() {
       <div className="privateCommunityAnalyticsHeader">
         <div>
           <small>SUPER ADMIN ONLY</small>
-          <h3>Live Mangalsaath Community</h3>
-          <p>Private community and visitor statistics. These numbers are not shown on the public website.</p>
+          <h3>Growth & Membership Funnel</h3>
+          <p>Private acquisition, profile-completion and membership conversion statistics.</p>
         </div>
         <div className="analyticsIpControl">
           <span className={data.currentIpExcluded ? "excluded" : "included"}>
@@ -93,27 +96,33 @@ export default function AdminAnalyticsPortal() {
         </div>
       </div>
 
+      {data.foundingOffer && (
+        <div className="analyticsIpMessage">
+          <b>First {number(data.foundingOffer.limit)} founding-member offer:</b>{" "}
+          {data.foundingOffer.active
+            ? `${number(data.foundingOffer.remaining)} place(s) remaining.`
+            : "Founding allocation completed; normal paid conversion is now active."}
+        </div>
+      )}
+
       <div className="privateCommunityAnalyticsGrid">
-        <article>
-          <small>Unique Visitors</small>
-          <b>{Number(data.uniqueVisitors || 0).toLocaleString("en-IN")}</b>
-        </article>
-        <article>
-          <small>Registered Members</small>
-          <b>{Number(data.registeredMembers || 0).toLocaleString("en-IN")}</b>
-        </article>
-        <article>
-          <small>Verified Profiles</small>
-          <b>{Number(data.verifiedProfiles || 0).toLocaleString("en-IN")}</b>
-        </article>
-        <article>
-          <small>Premium Members</small>
-          <b>{Number(data.premiumMembers || 0).toLocaleString("en-IN")}</b>
-        </article>
-        <article>
-          <small>Visitors Today</small>
-          <b>{Number(data.todayVisitors || 0).toLocaleString("en-IN")}</b>
-        </article>
+        <article><small>Unique Visitors</small><b>{number(data.uniqueVisitors)}</b></article>
+        <article><small>Total Visits</small><b>{number(data.totalVisits)}</b></article>
+        <article><small>Registered Members</small><b>{number(data.registeredMembers)}</b></article>
+        <article><small>Completed Profiles</small><b>{number(data.completedProfiles)}</b></article>
+        <article><small>Verified Profiles</small><b>{number(data.verifiedProfiles)}</b></article>
+        <article><small>Interests Sent</small><b>{number(data.interestsSent)}</b></article>
+        <article><small>Premium Members</small><b>{number(data.premiumMembers)}</b></article>
+        <article><small>Paid Members</small><b>{number(data.paidMembers)}</b></article>
+        <article><small>Visitors Today</small><b>{number(data.todayVisitors)}</b></article>
+      </div>
+
+      <div className="privateCommunityAnalyticsGrid">
+        <article><small>Visitor → Registration</small><b>{rate(data.conversion?.visitorToRegistration)}</b></article>
+        <article><small>Registration → Profile</small><b>{rate(data.conversion?.registrationToProfile)}</b></article>
+        <article><small>Profile → Verified</small><b>{rate(data.conversion?.profileToVerified)}</b></article>
+        <article><small>Registration → Premium</small><b>{rate(data.conversion?.registrationToPremium)}</b></article>
+        <article><small>Registration → Paid</small><b>{rate(data.conversion?.registrationToPaid)}</b></article>
       </div>
       {message && <p className="analyticsIpMessage">{message}</p>}
     </section>,
