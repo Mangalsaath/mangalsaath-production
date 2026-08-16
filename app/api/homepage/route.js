@@ -51,8 +51,8 @@ function foundingOffer(status) {
     discountType: "none",
     discountValue: 0,
     couponCode: "",
-    buttonText: "Create Free Profile",
-    buttonTarget: "register",
+    buttonText: "View Founding Offer",
+    buttonTarget: "membership",
     theme: "rose",
   };
 }
