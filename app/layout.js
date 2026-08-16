@@ -1,5 +1,7 @@
 import './globals.css';
+import './private-analytics.css';
 import { getPublicSiteSettings } from '@/lib/settings-service';
+import AdminAnalyticsPortal from '@/components/AdminAnalyticsPortal';
 
 const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://mangalsaath.com';
 
@@ -22,5 +24,5 @@ export async function generateMetadata() {
 export default async function RootLayout({ children }) {
   const settings = await getPublicSiteSettings();
   const organization = { '@context':'https://schema.org', '@type':'Organization', name:settings.businessName, url:siteUrl, email:settings.supportEmail };
-  return <html lang="en-IN"><body>{children}<script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(organization)}} /></body></html>;
+  return <html lang="en-IN"><body>{children}<AdminAnalyticsPortal/><script type="application/ld+json" dangerouslySetInnerHTML={{__html:JSON.stringify(organization)}} /></body></html>;
 }
