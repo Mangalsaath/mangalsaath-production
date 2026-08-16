@@ -1,0 +1,134 @@
+.publicTrustStats {
+  display: none !important;
+}
+
+.privateCommunityAnalytics {
+  order: -100;
+  margin: 0 0 24px;
+  padding: 22px;
+  border: 1px solid rgba(117, 22, 48, 0.16);
+  border-radius: 20px;
+  background: linear-gradient(135deg, #fffaf2 0%, #ffffff 58%, #f9f0e8 100%);
+  box-shadow: 0 16px 38px rgba(84, 35, 29, 0.08);
+}
+
+.privateCommunityAnalyticsHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  margin-bottom: 18px;
+}
+
+.privateCommunityAnalyticsHeader small {
+  display: block;
+  margin-bottom: 5px;
+  color: #9b6a28;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.privateCommunityAnalyticsHeader h3 {
+  margin: 0;
+  color: #68162c;
+  font-size: 1.35rem;
+}
+
+.privateCommunityAnalyticsHeader p {
+  margin: 6px 0 0;
+  color: #655b58;
+  max-width: 660px;
+}
+
+.privateCommunityAnalyticsGrid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.privateCommunityAnalyticsGrid article {
+  padding: 16px;
+  border: 1px solid rgba(117, 22, 48, 0.1);
+  border-radius: 15px;
+  background: rgba(255, 255, 255, 0.86);
+}
+
+.privateCommunityAnalyticsGrid small {
+  display: block;
+  color: #6b625f;
+  font-weight: 650;
+}
+
+.privateCommunityAnalyticsGrid b {
+  display: block;
+  margin-top: 7px;
+  color: #68162c;
+  font-size: 1.65rem;
+}
+
+.analyticsIpControl {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  min-width: 210px;
+}
+
+.analyticsIpControl span {
+  padding: 7px 10px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 750;
+}
+
+.analyticsIpControl .excluded {
+  color: #24633f;
+  background: #eaf7ef;
+}
+
+.analyticsIpControl .included {
+  color: #7b4d17;
+  background: #fff2d9;
+}
+
+.analyticsIpControl button {
+  border: 0;
+  border-radius: 10px;
+  padding: 9px 12px;
+  background: #68162c;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.analyticsIpControl button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+.analyticsIpMessage {
+  margin: 12px 0 0;
+  color: #544b48;
+  font-size: 0.85rem;
+}
+
+@media (max-width: 1050px) {
+  .privateCommunityAnalyticsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 700px) {
+  .privateCommunityAnalyticsHeader {
+    flex-direction: column;
+  }
+
+  .analyticsIpControl {
+    align-items: flex-start;
+  }
+
+  .privateCommunityAnalyticsGrid {
+    grid-template-columns: 1fr;
+  }
+}
