@@ -1,4 +1,5 @@
 import './globals.css';
+import './homepage-compact.css';
 import './private-analytics.css';
 import { getPublicSiteSettings } from '@/lib/settings-service';
 import AdminAnalyticsPortal from '@/components/AdminAnalyticsPortal';
