@@ -22,6 +22,7 @@
     "db:admin-core:verify": "node scripts/verify-admin-core.mjs",
     "db:payments:verify": "node scripts/verify-payment-engine.mjs",
     "db:entitlements:verify": "node scripts/verify-entitlements-checkout.mjs",
+    "db:demo:seed": "node scripts/seed-demo-profiles.mjs",
     "verify:launch": "node scripts/verify-launch-readiness.mjs",
     "verify:production-env": "node scripts/verify-production-env.mjs",
     "verify:hostinger": "node scripts/verify-hostinger-services.mjs",
