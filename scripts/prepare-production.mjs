@@ -128,10 +128,11 @@ async function seedAdmin() {
   const password = String(process.env.ADMIN_PASSWORD || '');
   const resetPassword = String(process.env.ADMIN_RESET_PASSWORD || '').toLowerCase() === 'true';
 
-  // An already-created Super Admin must survive ordinary deployments even when
-  // the bootstrap password is removed from the hosting environment.
+  // Preserve the existing Super Admin across ordinary deployments and migrate
+  // the legacy `admin` role to the dedicated `super_admin` role required by
+  // privileged controls introduced in v6.9.0.
   const existingAdmin = await prisma.user.findFirst({
-    where: { role: 'admin' },
+    where: { role: { in: ['super_admin', 'admin'] } },
     orderBy: { createdAt: 'asc' }
   });
 
@@ -148,7 +149,7 @@ async function seedAdmin() {
       if (!/^\d{10}$/.test(mobile)) throw new Error('ADMIN_MOBILE must contain a valid 10-digit Indian mobile number.');
       data.mobile = mobile;
     }
-    data.role = 'admin';
+    data.role = 'super_admin';
     data.status = 'active';
     data.mobileVerified = true;
     data.emailVerified = true;
@@ -182,7 +183,7 @@ async function seedAdmin() {
   await prisma.user.create({
     data: {
       id: uid('admin'), username, firstName, lastName, email, mobile,
-      passwordHash: hashPassword(password), role: 'admin', status: 'active',
+      passwordHash: hashPassword(password), role: 'super_admin', status: 'active',
       mobileVerified: true, emailVerified: true, verified: true,
       membership: 'Free', membershipPlanId: 'free', mustChangePassword: true,
       passwordChangedAt: new Date()
