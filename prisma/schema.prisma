@@ -119,6 +119,12 @@ model MemberProfile {
   verificationStatus    String    @default("not-requested") @db.VarChar(40)
   trustedProfile        Boolean   @default(false)
   initials              String?   @db.VarChar(12)
+  isDemoProfile         Boolean   @default(false)
+  demoVisible           Boolean   @default(false)
+  demoVisibleFrom       DateTime?
+  demoVisibleUntil      DateTime?
+  demoCreatedBy         String?   @db.VarChar(64)
+  demoLabel             String?   @db.VarChar(80)
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
@@ -127,6 +133,7 @@ model MemberProfile {
   @@index([gender, city])
   @@index([religion, caste])
   @@index([verificationStatus, trustedProfile])
+  @@index([isDemoProfile, demoVisible, demoVisibleUntil])
   @@index([createdAt])
   @@map("member_profiles")
 }
