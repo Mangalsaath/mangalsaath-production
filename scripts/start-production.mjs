@@ -8,8 +8,12 @@ const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '
 console.log('[MangalSaath startup] Verifying production environment...');
 await import('./verify-production-env.mjs');
 
-// Startup must remain read-only. Schema synchronization and seed operations are
-// intentionally performed by `npm run deploy:production`, not on every restart.
+// Hostinger auto-deploy starts the app with `npm start`, so run only the narrow,
+// idempotent compatibility migration required for the configured Super Admin.
+// This does not seed members, plans, coupons, demo profiles, or other app data.
+console.log('[MangalSaath startup] Verifying Super Admin role compatibility...');
+await import('./migrate-super-admin-role.mjs');
+
 console.log('[MangalSaath startup] Starting the production web server...');
 const nextCli = path.join(projectRoot, 'node_modules', 'next', 'dist', 'bin', 'next');
 const child = spawn(process.execPath, [nextCli, 'start'], {
