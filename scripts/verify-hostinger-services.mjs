@@ -119,7 +119,7 @@ async function verifyDatabaseAndAdmin() {
   }
 
   const admins = await prisma.user.findMany({
-    where: { role: 'admin' },
+    where: { role: 'super_admin' },
     orderBy: { createdAt: 'asc' },
     select: {
       id: true,
