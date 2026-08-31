@@ -34,7 +34,8 @@ async function requirePrimarySuperAdmin(request) {
 
 async function visibilitySummary() {
   const now = new Date();
-  const [actualTotal, aiTotal, aiVisibleNow, nextExpiry] = await Promise.all([
+  const control = await getDemoProfileControl();
+  const [actualTotal, aiTotal, aiVisibleNow] = await Promise.all([
     prisma.memberProfile.count({ where: { isDemoProfile: false } }),
     prisma.memberProfile.count({ where: { isDemoProfile: true } }),
     prisma.memberProfile.count({
@@ -45,18 +46,15 @@ async function visibilitySummary() {
         AND: [{ OR: [{ demoVisibleUntil: null }, { demoVisibleUntil: { gt: now } }] }],
       },
     }),
-    prisma.memberProfile.findFirst({
-      where: { isDemoProfile: true, demoVisible: true, demoVisibleUntil: { gt: now } },
-      orderBy: { demoVisibleUntil: "asc" },
-      select: { demoVisibleUntil: true },
-    }),
   ]);
   return {
     actualTotal,
     aiTotal,
     aiVisibleNow,
-    enabled: aiVisibleNow > 0,
-    expiresAt: nextExpiry?.demoVisibleUntil?.toISOString() || null,
+    enabled: control.enabled === true && aiVisibleNow > 0,
+    expiresAt: null,
+    showPublicLabel: control.showPublicLabel === true,
+    publicLabel: control.publicLabel,
   };
 }
 
@@ -78,33 +76,30 @@ export async function POST(request) {
     const now = new Date();
 
     if (action === "enable") {
-      const minutes = Math.min(1440, Math.max(1, Number(body.durationMinutes || 60)));
-      const expiresAt = new Date(now.getTime() + minutes * 60_000);
       const result = await prisma.memberProfile.updateMany({
         where: { isDemoProfile: true },
-        data: { demoVisible: true, demoVisibleFrom: now, demoVisibleUntil: expiresAt },
+        data: { demoVisible: true, demoVisibleFrom: now, demoVisibleUntil: null },
       });
       const control = await getDemoProfileControl();
       await saveDemoProfileControl({
         ...control,
         enabled: true,
         allowDiscovery: true,
-        defaultDurationMinutes: minutes,
       });
       await appendAdminAudit({
         actorUserId: auth.user.id,
-        action: "demo.quick_visibility.enabled",
+        action: "demo.quick_visibility.enabled_manual",
         entityType: "MemberProfile",
-        metadata: { count: result.count, minutes, expiresAt },
+        metadata: { count: result.count, mode: "manual_until_disabled" },
         request,
       });
-      return NextResponse.json({ message: `${result.count} AI profiles enabled.`, ...(await visibilitySummary()) });
+      return NextResponse.json({ message: `${result.count} AI profiles enabled until manually disabled.`, ...(await visibilitySummary()) });
     }
 
     if (action === "disable") {
       const result = await prisma.memberProfile.updateMany({
         where: { isDemoProfile: true },
-        data: { demoVisible: false, demoVisibleUntil: now },
+        data: { demoVisible: false, demoVisibleUntil: null },
       });
       const control = await getDemoProfileControl();
       await saveDemoProfileControl({
@@ -116,12 +111,29 @@ export async function POST(request) {
       });
       await appendAdminAudit({
         actorUserId: auth.user.id,
-        action: "demo.quick_visibility.disabled",
+        action: "demo.quick_visibility.disabled_manual",
         entityType: "MemberProfile",
-        metadata: { count: result.count },
+        metadata: { count: result.count, mode: "manual" },
         request,
       });
-      return NextResponse.json({ message: "AI profile visibility disabled.", ...(await visibilitySummary()) });
+      return NextResponse.json({ message: "AI profile visibility disabled by Super Admin.", ...(await visibilitySummary()) });
+    }
+
+    if (action === "set-public-label") {
+      const showPublicLabel = body.showPublicLabel === true;
+      const control = await getDemoProfileControl();
+      await saveDemoProfileControl({ ...control, showPublicLabel });
+      await appendAdminAudit({
+        actorUserId: auth.user.id,
+        action: showPublicLabel ? "demo.public_label.enabled" : "demo.public_label.disabled",
+        entityType: "BusinessSetting",
+        metadata: { showPublicLabel },
+        request,
+      });
+      return NextResponse.json({
+        message: showPublicLabel ? "Public AI profile label enabled." : "Public AI profile label disabled.",
+        ...(await visibilitySummary()),
+      });
     }
 
     return NextResponse.json({ error: "Invalid visibility action." }, { status: 400 });
