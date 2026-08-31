@@ -7,6 +7,7 @@ export default function AdminDemoLayout({ children }) {
           <div style={styles.tabs}>
             <a href="/admin-demo" style={styles.tab}>Control Center</a>
             <a href="/admin-demo/profiles" style={styles.tab}>Edit AI Profiles</a>
+            <a href="/admin-demo/gallery" style={styles.tab}>AI Gallery</a>
           </div>
         </div>
       </nav>
