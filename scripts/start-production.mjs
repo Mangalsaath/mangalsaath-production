@@ -10,9 +10,22 @@ await import('./verify-production-env.mjs');
 
 // Hostinger auto-deploy starts the app with `npm start`, so run only the narrow,
 // idempotent compatibility migration required for the configured Super Admin.
-// This does not seed members, plans, coupons, demo profiles, or other app data.
 console.log('[MangalSaath startup] Verifying Super Admin role compatibility...');
 await import('./migrate-super-admin-role.mjs');
+
+// Controlled synthetic demo profiles may be seeded only when BOTH explicit
+// production flags are present in the Web App runtime environment. The seed
+// script itself performs the same guard checks and uses deterministic upserts,
+// so repeated startup while the flags remain enabled will not create duplicates.
+const allowDemoSeed = process.env.ALLOW_SYNTHETIC_DEMO_SEED === 'true';
+const confirmDemoSeed = process.env.CONFIRM_CONTROLLED_DEMO_SEED === 'YES';
+if (allowDemoSeed && confirmDemoSeed) {
+  console.log('[MangalSaath startup] Controlled demo seed explicitly authorized; seeding synthetic profiles...');
+  await import('./seed-demo-profiles.mjs');
+  console.log('[MangalSaath startup] Controlled demo seed completed. Remove the temporary seed flags now.');
+} else {
+  console.log('[MangalSaath startup] Controlled demo seed not authorized; skipping.');
+}
 
 console.log('[MangalSaath startup] Starting the production web server...');
 const nextCli = path.join(projectRoot, 'node_modules', 'next', 'dist', 'bin', 'next');
