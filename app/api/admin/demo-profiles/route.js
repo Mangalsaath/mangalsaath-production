@@ -5,6 +5,7 @@ import { requireAdmin, ADMIN_PERMISSIONS, isAdminAuthorizationError } from "@/li
 import { appendAdminAudit } from "@/lib/admin-audit";
 import { cleanText, rateLimit } from "@/lib/security";
 import { demoVisibilityWindow, getDemoProfileControl, saveDemoProfileControl } from "@/lib/demo-profile-control";
+import { mangalsaathIdForProfile } from "@/lib/mangalsaath-id";
 
 function fail(error) {
   if (isAdminAuthorizationError(error)) {
@@ -17,6 +18,7 @@ function fail(error) {
 function serialize(profile) {
   return {
     ...profile,
+    mangalsaathId: mangalsaathIdForProfile(profile.id),
     dateOfBirth: profile.dateOfBirth?.toISOString().slice(0, 10),
     demoVisibleFrom: profile.demoVisibleFrom?.toISOString() || null,
     demoVisibleUntil: profile.demoVisibleUntil?.toISOString() || null,
@@ -315,6 +317,7 @@ export async function POST(request) {
         metadata: {
           synthetic: true,
           changedFields,
+          mangalsaathId: mangalsaathIdForProfile(profile.id),
           visibilityPreserved: {
             demoVisible: profile.demoVisible,
             demoVisibleFrom: profile.demoVisibleFrom,
@@ -325,7 +328,7 @@ export async function POST(request) {
       });
 
       return NextResponse.json({
-        message: "AI profile updated. Visibility status was preserved.",
+        message: "AI profile updated. Mangalsaath ID and visibility status were preserved.",
         profile: serialize(updated),
       });
     }
@@ -374,7 +377,7 @@ export async function POST(request) {
         action: "demo.profile.deleted",
         entityType: "MemberProfile",
         entityId: profile.id,
-        metadata: { synthetic: true },
+        metadata: { synthetic: true, mangalsaathId: mangalsaathIdForProfile(profile.id) },
         request,
       });
       return NextResponse.json({ message: "Synthetic demo profile deleted." });
