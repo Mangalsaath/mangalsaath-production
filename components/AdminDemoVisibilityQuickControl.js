@@ -85,14 +85,13 @@ export default function AdminDemoVisibilityQuickControl() {
   if (!mount) return null;
 
   const enabled = state?.enabled === true;
-  const showPublicLabel = state?.showPublicLabel === true;
   const panel = (
     <section style={styles.panel} aria-label="Super Admin AI profile visibility control">
       <div style={styles.head}>
         <div>
           <small style={styles.eyebrow}>SUPER ADMIN CONTROL PANEL</small>
-          <strong style={styles.title}>Profile Visibility Control</strong>
-          <p style={styles.subtitle}>Actual member profiles and AI/synthetic profiles are controlled separately.</p>
+          <strong style={styles.title}>AI Profile Control & Workspace</strong>
+          <p style={styles.subtitle}>Control AI profile availability and open the protected profile-management tools directly from Admin Console.</p>
         </div>
       </div>
 
@@ -121,28 +120,15 @@ export default function AdminDemoVisibilityQuickControl() {
         </article>
       </div>
 
-      <div style={styles.labelPanel}>
+      <div style={styles.workspacePanel}>
         <div>
-          <strong style={styles.sectionTitle}>Public AI Profile Label</strong>
-          <small style={styles.help}>
-            Super Admin decides whether the public-facing AI label is shown. Current setting: {showPublicLabel ? "ON" : "OFF"}.
-          </small>
+          <strong style={styles.sectionTitle}>AI Profile Workspace</strong>
+          <small style={styles.help}>Super Admin can edit AI profile details, manage gallery photos and run controlled gallery batches.</small>
         </div>
-        <div style={styles.actionsCompact}>
-          <button
-            style={showPublicLabel ? styles.secondaryDisabled : styles.secondary}
-            disabled={busy || showPublicLabel}
-            onClick={() => act("set-public-label", { showPublicLabel: true })}
-          >
-            Show AI Label
-          </button>
-          <button
-            style={!showPublicLabel ? styles.secondaryDisabled : styles.secondary}
-            disabled={busy || !showPublicLabel}
-            onClick={() => act("set-public-label", { showPublicLabel: false })}
-          >
-            Hide AI Label
-          </button>
+        <div style={styles.workspaceActions}>
+          <a style={styles.workspaceLinkPrimary} href="/admin-demo/profiles">Edit AI Profiles</a>
+          <a style={styles.workspaceLink} href="/admin-demo/gallery">AI Gallery</a>
+          <a style={styles.workspaceLink} href="/admin-demo/gallery/batch">Batch Rollout</a>
         </div>
       </div>
 
@@ -180,12 +166,12 @@ const styles = {
   disabledText: { display: "block", color: "#7b6b71", fontSize: 12, lineHeight: 1.4, marginTop: 18 },
   on: { padding: "4px 7px", borderRadius: 999, background: "#e1f5e9", color: "#26704f", fontWeight: 800, fontSize: 9 },
   off: { padding: "4px 7px", borderRadius: 999, background: "#efe8eb", color: "#6f5c62", fontWeight: 800, fontSize: 9 },
-  labelPanel: { display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12, marginTop: 14, padding: 14, border: "1px solid #eadde1", borderRadius: 12, background: "#fcfafb" },
-  actionsCompact: { display: "flex", flexWrap: "wrap", gap: 8 },
+  workspacePanel: { display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12, marginTop: 14, padding: 14, border: "1px solid #eadde1", borderRadius: 12, background: "#fcfafb" },
+  workspaceActions: { display: "flex", flexWrap: "wrap", gap: 8 },
+  workspaceLinkPrimary: { display: "inline-block", textDecoration: "none", border: 0, borderRadius: 8, padding: "10px 13px", background: "#741f39", color: "#fff", fontWeight: 700 },
+  workspaceLink: { display: "inline-block", textDecoration: "none", border: "1px solid #741f39", borderRadius: 8, padding: "9px 12px", background: "#fff", color: "#741f39", fontWeight: 700 },
   error: { margin: "12px 0 0", padding: 10, borderRadius: 8, background: "#fdeaea", color: "#8a1f2d", fontSize: 12 },
   actions: { display: "flex", flexWrap: "wrap", gap: 10, marginTop: 14 },
   enable: { minWidth: 180, border: 0, borderRadius: 8, padding: "11px 14px", background: "#741f39", color: "#fff", fontWeight: 700, cursor: "pointer" },
   disable: { minWidth: 180, border: "1px solid #a21d2d", borderRadius: 8, padding: "11px 14px", background: "#fff5f6", color: "#941f2e", fontWeight: 700, cursor: "pointer" },
-  secondary: { border: "1px solid #741f39", borderRadius: 8, padding: "9px 12px", background: "#fff", color: "#741f39", fontWeight: 700, cursor: "pointer" },
-  secondaryDisabled: { border: "1px solid #d8ccd0", borderRadius: 8, padding: "9px 12px", background: "#f4f0f1", color: "#9d9195", fontWeight: 700, cursor: "default" },
 };
