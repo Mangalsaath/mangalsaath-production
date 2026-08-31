@@ -129,11 +129,11 @@ export default function EditAiProfilesPage() {
         <div>
           <small style={s.eyebrow}>SUPER ADMIN ONLY</small>
           <h1 style={s.h1}>Edit AI Profiles</h1>
-          <p style={s.muted}>Search and edit all synthetic profiles. Editing does not change AI visibility status.</p>
+          <p style={s.muted}>Search and amend synthetic profile details. Mangalsaath ID and AI visibility are preserved automatically.</p>
         </div>
         <div style={s.headerActions}>
-          <a href="/admin-demo" style={s.link}>Demo Control Center</a>
-          <a href="/" style={s.link}>Back to Mangalsaath</a>
+          <a href="/admin-demo/gallery" style={s.link}>AI Gallery</a>
+          <a href="/" style={s.link}>Back to Admin Console</a>
         </div>
       </header>
 
@@ -145,7 +145,8 @@ export default function EditAiProfilesPage() {
           <div style={s.panelHead}>
             <div>
               <h2 style={s.h2}>Edit: {editing.name}</h2>
-              <p style={s.muted}>Profile ID: {editing.id} · Current visibility: {editing.demoVisible ? "Enabled" : "Hidden"}</p>
+              <p style={s.idLine}><b>Mangalsaath ID: {editing.mangalsaathId || "—"}</b></p>
+              <p style={s.muted}>Internal profile key: {editing.id} · Current visibility: {editing.demoVisible ? "Enabled" : "Hidden"}</p>
             </div>
             <button style={s.secondary} onClick={() => setEditing(null)} disabled={busy}>Close</button>
           </div>
@@ -189,7 +190,7 @@ export default function EditAiProfilesPage() {
           </div>
 
           <div style={s.photoNote}>
-            <b>Photos:</b> {Array.isArray(editing.photos) ? editing.photos.length : 0} attached · Primary photo: {editing.primaryPhoto || "Not set"}. Photo replacement/gallery management will remain a separate controlled action.
+            <b>Photos:</b> {Array.isArray(editing.photos) ? editing.photos.length : 0} attached · Primary photo: {editing.primaryPhoto || "Not set"}. Photo replacement/gallery management remains a separate controlled action.
           </div>
 
           <div style={s.actions}>
@@ -217,12 +218,12 @@ export default function EditAiProfilesPage() {
         <div style={s.tableWrap}>
           <table style={s.table}>
             <thead>
-              <tr><th style={s.th}>Profile</th><th style={s.th}>Religion / Community</th><th style={s.th}>Education / Profession</th><th style={s.th}>Location</th><th style={s.th}>Income</th><th style={s.th}>Status</th><th style={s.th}>Action</th></tr>
+              <tr><th style={s.th}>Mangalsaath ID / Profile</th><th style={s.th}>Religion / Community</th><th style={s.th}>Education / Profession</th><th style={s.th}>Location</th><th style={s.th}>Income</th><th style={s.th}>Status</th><th style={s.th}>Action</th></tr>
             </thead>
             <tbody>
               {profiles.map((profile) => (
                 <tr key={profile.id}>
-                  <td style={s.td}><b>{profile.name}</b><br /><small>{profile.gender || "—"}, {profile.age || "—"} yrs</small></td>
+                  <td style={s.td}><b style={s.memberId}>{profile.mangalsaathId || "—"}</b><br /><b>{profile.name}</b><br /><small>{profile.gender || "—"}, {profile.age || "—"} yrs</small></td>
                   <td style={s.td}>{profile.religion || "—"}<br /><small>{profile.caste || "—"}{profile.subCaste ? ` / ${profile.subCaste}` : ""}</small></td>
                   <td style={s.td}>{profile.education || "—"}<br /><small>{profile.profession || "—"}</small></td>
                   <td style={s.td}>{profile.city || "—"}, {profile.state || "—"}</td>
@@ -257,6 +258,7 @@ const s = {
   eyebrow: { color: "#741f39", fontWeight: 800, letterSpacing: 1.2 },
   h1: { margin: "7px 0 6px", fontSize: 36 }, h2: { margin: "0 0 8px", fontSize: 22 }, h3: { margin: "20px 0 12px" },
   muted: { color: "#776a6e", lineHeight: 1.5 }, link: { color: "#741f39", textDecoration: "none", fontWeight: 700 },
+  idLine: { margin: "6px 0", color: "#741f39", fontSize: 15 }, memberId: { color: "#741f39", fontSize: 12 },
   panel: { background: "#fff", border: "1px solid #eadde1", borderRadius: 16, padding: 20, marginBottom: 20, boxShadow: "0 10px 30px rgba(77,16,37,.05)" },
   panelHead: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14, marginBottom: 16 },
   grid: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 12 },
@@ -266,7 +268,7 @@ const s = {
   error: { padding: 13, borderRadius: 10, background: "#fdeaea", color: "#8a1f2d", marginBottom: 14 }, success: { padding: 13, borderRadius: 10, background: "#e8f6ef", color: "#26704f", marginBottom: 14 },
   photoNote: { marginTop: 16, padding: 12, borderRadius: 10, background: "#faf6f7", color: "#5c4b51" },
   searchRow: { display: "flex", flexWrap: "wrap", gap: 9, marginBottom: 16 }, search: { flex: "1 1 420px", padding: 11, border: "1px solid #cebfc4", borderRadius: 9 },
-  tableWrap: { overflowX: "auto" }, table: { width: "100%", borderCollapse: "collapse", minWidth: 1040 }, th: { textAlign: "left", padding: 10, borderBottom: "1px solid #eadde1", color: "#776a6e", fontSize: 13 }, td: { padding: 11, borderBottom: "1px solid #f0e5e8", verticalAlign: "top" },
+  tableWrap: { overflowX: "auto" }, table: { width: "100%", borderCollapse: "collapse", minWidth: 1120 }, th: { textAlign: "left", padding: 10, borderBottom: "1px solid #eadde1", color: "#776a6e", fontSize: 13 }, td: { padding: 11, borderBottom: "1px solid #f0e5e8", verticalAlign: "top" },
   badgeOn: { display: "inline-block", padding: "5px 8px", borderRadius: 999, background: "#e8f6ef", color: "#26704f", fontSize: 12, fontWeight: 700 }, badgeOff: { display: "inline-block", padding: "5px 8px", borderRadius: 999, background: "#f5edf0", color: "#6f5c62", fontSize: 12, fontWeight: 700 },
   editButton: { border: "1px solid #741f39", borderRadius: 7, padding: "7px 11px", background: "#fff", color: "#741f39", fontWeight: 700, cursor: "pointer" }, pagination: { display: "flex", justifyContent: "center", alignItems: "center", gap: 14, marginTop: 18 },
 };
