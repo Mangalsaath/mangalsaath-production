@@ -30,6 +30,7 @@ export default function AiGalleryPage() {
   const [replaceUrl, setReplaceUrl] = useState("");
   const [replaceId, setReplaceId] = useState("");
   const [busy, setBusy] = useState(false);
+  const [uploadBusy, setUploadBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
@@ -72,6 +73,50 @@ export default function AiGalleryPage() {
     }
   }
 
+  async function uploadFile(file) {
+    if (!selected || !file) return;
+    setUploadBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      const token = typeof window !== "undefined" ? localStorage.getItem("ms_token") : "";
+      const signatureResponse = await fetch(`/api/admin/demo-profiles/gallery/upload-signature?profileId=${encodeURIComponent(selected.id)}`, {
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+        cache: "no-store",
+      });
+      const signatureData = await signatureResponse.json().catch(() => ({}));
+      if (!signatureResponse.ok) throw new Error(signatureData.error || "Unable to prepare image upload.");
+
+      if (!signatureData.limits?.mimeTypes?.includes(file.type)) {
+        throw new Error("Use JPG, PNG, WebP, or AVIF images only.");
+      }
+      if (file.size > Number(signatureData.limits?.maxBytes || 0)) {
+        throw new Error("Image is too large. Maximum size is 8 MB.");
+      }
+
+      const form = new FormData();
+      form.append("file", file);
+      form.append("api_key", signatureData.apiKey);
+      form.append("timestamp", String(signatureData.timestamp));
+      form.append("folder", signatureData.folder);
+      form.append("transformation", signatureData.transformation);
+      form.append("signature", signatureData.signature);
+
+      const uploadResponse = await fetch(signatureData.uploadUrl, { method: "POST", body: form });
+      const uploaded = await uploadResponse.json().catch(() => ({}));
+      if (!uploadResponse.ok || !uploaded.secure_url) {
+        throw new Error(uploaded?.error?.message || "External image upload failed.");
+      }
+
+      await galleryAction("add-url", { url: uploaded.secure_url, label: file.name.replace(/\.[^.]+$/, "") || "Profile photo" });
+      setNotice("Photo uploaded to external storage and added to the gallery.");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUploadBusy(false);
+    }
+  }
+
   const photos = Array.isArray(selected?.photos) ? selected.photos : [];
 
   return (
@@ -80,7 +125,7 @@ export default function AiGalleryPage() {
         <div>
           <small style={s.eyebrow}>SUPER ADMIN ONLY</small>
           <h1 style={s.h1}>AI Profile Gallery</h1>
-          <p style={s.muted}>Manage up to 5 externally stored photos per synthetic profile. Image binaries are not stored in GitHub.</p>
+          <p style={s.muted}>Manage up to 5 externally stored photos per synthetic profile. Image binaries are not stored in GitHub or the Mangalsaath database.</p>
         </div>
         <a href="/admin-demo/profiles" style={s.link}>Edit AI Profiles</a>
       </header>
@@ -91,8 +136,8 @@ export default function AiGalleryPage() {
       <section style={s.panel}>
         <div style={s.searchRow}>
           <input style={s.input} placeholder="Search AI profile..." value={search} onChange={(e) => setSearch(e.target.value)} />
-          <button style={s.primary} onClick={() => load(search.trim())} disabled={busy}>Search</button>
-          <button style={s.secondary} onClick={() => { setSearch(""); load(""); }} disabled={busy}>Clear</button>
+          <button style={s.primary} onClick={() => load(search.trim())} disabled={busy || uploadBusy}>Search</button>
+          <button style={s.secondary} onClick={() => { setSearch(""); load(""); }} disabled={busy || uploadBusy}>Clear</button>
         </div>
         <div style={s.profileGrid}>
           {profiles.map((profile) => (
@@ -123,9 +168,9 @@ export default function AiGalleryPage() {
                   <b>{photo.label || `Photo ${index + 1}`}</b>
                   {selected.primaryPhoto === photo.id && <span style={s.primaryBadge}>Primary</span>}
                   <div style={s.cardActions}>
-                    {selected.primaryPhoto !== photo.id && <button style={s.small} disabled={busy} onClick={() => galleryAction("set-primary", { photoId: photo.id })}>Set Primary</button>}
-                    <button style={s.small} disabled={busy} onClick={() => { setReplaceId(photo.id); setReplaceUrl(photoSrc(photo)); }}>Replace</button>
-                    <button style={s.smallDanger} disabled={busy} onClick={() => { if (window.confirm("Remove this photo?")) galleryAction("remove", { photoId: photo.id }); }}>Remove</button>
+                    {selected.primaryPhoto !== photo.id && <button style={s.small} disabled={busy || uploadBusy} onClick={() => galleryAction("set-primary", { photoId: photo.id })}>Set Primary</button>}
+                    <button style={s.small} disabled={busy || uploadBusy} onClick={() => { setReplaceId(photo.id); setReplaceUrl(photoSrc(photo)); }}>Replace URL</button>
+                    <button style={s.smallDanger} disabled={busy || uploadBusy} onClick={() => { if (window.confirm("Remove this photo?")) galleryAction("remove", { photoId: photo.id }); }}>Remove</button>
                   </div>
                 </div>
               </article>
@@ -134,19 +179,33 @@ export default function AiGalleryPage() {
 
           {photos.length < 5 && (
             <div style={s.formBox}>
-              <h3 style={s.h3}>Add photo from external storage</h3>
+              <h3 style={s.h3}>Upload photo to external storage</h3>
+              <input
+                style={s.input}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/avif"
+                disabled={busy || uploadBusy}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  e.target.value = "";
+                  if (file) uploadFile(file);
+                }}
+              />
+              <small style={s.muted}>JPG, PNG, WebP or AVIF · maximum 8 MB. Upload goes directly from your browser to external storage.</small>
+
+              <div style={s.divider}>or add an existing HTTPS image URL</div>
               <input style={s.input} placeholder="https://... image URL" value={newUrl} onChange={(e) => setNewUrl(e.target.value)} />
-              <button style={s.primary} disabled={busy || !newUrl.trim()} onClick={() => galleryAction("add-url", { url: newUrl.trim() })}>Add Photo</button>
+              <button style={s.primary} disabled={busy || uploadBusy || !newUrl.trim()} onClick={() => galleryAction("add-url", { url: newUrl.trim() })}>Add Existing URL</button>
             </div>
           )}
 
           {replaceId && (
             <div style={s.formBox}>
-              <h3 style={s.h3}>Replace selected photo</h3>
+              <h3 style={s.h3}>Replace selected photo URL</h3>
               <input style={s.input} placeholder="https://... replacement image URL" value={replaceUrl} onChange={(e) => setReplaceUrl(e.target.value)} />
               <div style={s.cardActions}>
-                <button style={s.primary} disabled={busy || !replaceUrl.trim()} onClick={() => galleryAction("replace-url", { photoId: replaceId, url: replaceUrl.trim() })}>Save Replacement</button>
-                <button style={s.secondary} disabled={busy} onClick={() => { setReplaceId(""); setReplaceUrl(""); }}>Cancel</button>
+                <button style={s.primary} disabled={busy || uploadBusy || !replaceUrl.trim()} onClick={() => galleryAction("replace-url", { photoId: replaceId, url: replaceUrl.trim() })}>Save Replacement</button>
+                <button style={s.secondary} disabled={busy || uploadBusy} onClick={() => { setReplaceId(""); setReplaceUrl(""); }}>Cancel</button>
               </div>
             </div>
           )}
@@ -178,5 +237,6 @@ const s = {
   cardBody: { padding: 10, display: "grid", gap: 8 }, primaryBadge: { width: "fit-content", padding: "3px 7px", borderRadius: 999, background: "#e8f6ef", color: "#26704f", fontSize: 12, fontWeight: 700 },
   cardActions: { display: "flex", flexWrap: "wrap", gap: 7 }, small: { border: "1px solid #cebfc4", borderRadius: 7, padding: "6px 8px", background: "#fff", cursor: "pointer" }, smallDanger: { border: "1px solid #d9a8ae", borderRadius: 7, padding: "6px 8px", background: "#fff5f6", color: "#941f2e", cursor: "pointer" },
   formBox: { marginTop: 18, padding: 14, border: "1px dashed #cebfc4", borderRadius: 10, display: "grid", gap: 10 },
+  divider: { textAlign: "center", color: "#8b7b80", fontSize: 12, fontWeight: 700, margin: "2px 0" },
   error: { padding: 14, borderRadius: 10, background: "#fdeaea", color: "#8a1f2d", marginBottom: 16 }, success: { padding: 14, borderRadius: 10, background: "#e8f6ef", color: "#26704f", marginBottom: 16 },
 };
