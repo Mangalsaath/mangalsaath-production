@@ -34,7 +34,8 @@ async function requirePrimarySuperAdmin(request) {
 
 async function visibilitySummary() {
   const now = new Date();
-  const [total, visibleNow, nextExpiry] = await Promise.all([
+  const [actualTotal, aiTotal, aiVisibleNow, nextExpiry] = await Promise.all([
+    prisma.memberProfile.count({ where: { isDemoProfile: false } }),
     prisma.memberProfile.count({ where: { isDemoProfile: true } }),
     prisma.memberProfile.count({
       where: {
@@ -51,9 +52,10 @@ async function visibilitySummary() {
     }),
   ]);
   return {
-    total,
-    visibleNow,
-    enabled: visibleNow > 0,
+    actualTotal,
+    aiTotal,
+    aiVisibleNow,
+    enabled: aiVisibleNow > 0,
     expiresAt: nextExpiry?.demoVisibleUntil?.toISOString() || null,
   };
 }
@@ -96,7 +98,7 @@ export async function POST(request) {
         metadata: { count: result.count, minutes, expiresAt },
         request,
       });
-      return NextResponse.json({ message: `${result.count} AI/demo profiles enabled.`, ...(await visibilitySummary()) });
+      return NextResponse.json({ message: `${result.count} AI profiles enabled.`, ...(await visibilitySummary()) });
     }
 
     if (action === "disable") {
@@ -119,7 +121,7 @@ export async function POST(request) {
         metadata: { count: result.count },
         request,
       });
-      return NextResponse.json({ message: `${result.count} AI/demo profiles hidden.`, ...(await visibilitySummary()) });
+      return NextResponse.json({ message: "AI profile visibility disabled.", ...(await visibilitySummary()) });
     }
 
     return NextResponse.json({ error: "Invalid visibility action." }, { status: 400 });
