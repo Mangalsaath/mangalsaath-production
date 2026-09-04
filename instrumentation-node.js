@@ -1,3 +1,10 @@
+try {
+  await import('./scripts/backfill-dual-mangal-ids.mjs');
+  console.log('[MangalSaath instrumentation] Dual Mangal ID series verified.');
+} catch (error) {
+  console.error('[MangalSaath instrumentation] Dual Mangal ID backfill could not complete.', error);
+}
+
 const allowDemoSeed = process.env.ALLOW_SYNTHETIC_DEMO_SEED === 'true';
 const confirmDemoSeed = process.env.CONFIRM_CONTROLLED_DEMO_SEED === 'YES';
 const STARTUP_GUARD_KEY = 'controlledDemoSeedStartupGuardV1';

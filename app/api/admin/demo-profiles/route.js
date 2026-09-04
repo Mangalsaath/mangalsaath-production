@@ -5,7 +5,7 @@ import { requireAdmin, ADMIN_PERMISSIONS, isAdminAuthorizationError } from "@/li
 import { appendAdminAudit } from "@/lib/admin-audit";
 import { cleanText, rateLimit } from "@/lib/security";
 import { demoVisibilityWindow, getDemoProfileControl, saveDemoProfileControl } from "@/lib/demo-profile-control";
-import { mangalsaathIdForProfile } from "@/lib/mangalsaath-id";
+import { allocateMangalNumber, mangalsaathIdForProfile } from "@/lib/mangalsaath-id";
 
 function fail(error) {
   if (isAdminAuthorizationError(error)) {
@@ -18,7 +18,7 @@ function fail(error) {
 function serialize(profile) {
   return {
     ...profile,
-    mangalsaathId: mangalsaathIdForProfile(profile.id),
+    mangalsaathId: mangalsaathIdForProfile(profile),
     dateOfBirth: profile.dateOfBirth?.toISOString().slice(0, 10),
     demoVisibleFrom: profile.demoVisibleFrom?.toISOString() || null,
     demoVisibleUntil: profile.demoVisibleUntil?.toISOString() || null,
@@ -87,7 +87,7 @@ export async function GET(request) {
       prisma.memberProfile.findMany({
         where,
         include: { user: true },
-        orderBy: { id: "asc" },
+        orderBy: { mangalNumber: "asc" },
         skip: (page - 1) * pageSize,
         take: pageSize,
       }),
@@ -190,9 +190,11 @@ export async function POST(request) {
           },
         });
 
+        const mangalNumber = await allocateMangalNumber(tx, true);
         return tx.memberProfile.create({
           data: {
             id: profileId,
+            mangalNumber,
             userId,
             name: `${firstName} ${lastName}`,
             gender: cleanText(body.gender, 30) || null,
@@ -229,7 +231,7 @@ export async function POST(request) {
         action: "demo.profile.created",
         entityType: "MemberProfile",
         entityId: created.id,
-        metadata: { visibleUntil: created.demoVisibleUntil, synthetic: true },
+        metadata: { visibleUntil: created.demoVisibleUntil, synthetic: true, mangalsaathId: mangalsaathIdForProfile(created) },
         request,
       });
       return NextResponse.json(
@@ -317,7 +319,7 @@ export async function POST(request) {
         metadata: {
           synthetic: true,
           changedFields,
-          mangalsaathId: mangalsaathIdForProfile(profile.id),
+          mangalsaathId: mangalsaathIdForProfile(profile),
           visibilityPreserved: {
             demoVisible: profile.demoVisible,
             demoVisibleFrom: profile.demoVisibleFrom,
@@ -371,13 +373,14 @@ export async function POST(request) {
     }
 
     if (action === "delete") {
+      const mangalsaathId = mangalsaathIdForProfile(profile);
       await prisma.user.delete({ where: { id: profile.userId } });
       await appendAdminAudit({
         actorUserId: admin.id,
         action: "demo.profile.deleted",
         entityType: "MemberProfile",
         entityId: profile.id,
-        metadata: { synthetic: true, mangalsaathId: mangalsaathIdForProfile(profile.id) },
+        metadata: { synthetic: true, mangalsaathId },
         request,
       });
       return NextResponse.json({ message: "Synthetic demo profile deleted." });
