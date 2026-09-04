@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && prisma db push --skip-generate && next build",
+    "build": "prisma generate && node scripts/prepare-mangal-column.mjs && next build",
     "start": "node scripts/start-production.mjs",
     "check": "node scripts/check-project.mjs",
     "create-admin": "node scripts/create-admin.mjs",
