@@ -16,6 +16,7 @@ export default function AdminDemoVisibilityQuickControl() {
   const [state, setState] = useState(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [mangalId, setMangalId] = useState("");
 
   useEffect(() => {
     function attach() {
@@ -82,6 +83,28 @@ export default function AdminDemoVisibilityQuickControl() {
     }
   }
 
+  async function findAndEdit() {
+    const id = mangalId.trim();
+    if (!/^Mangal[A-Z0-9]{6}$/i.test(id)) {
+      setError("Enter Mangal ID in Mangalxxxxxx format.");
+      return;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch(`/api/admin/demo-profiles/by-mangal-id?id=${encodeURIComponent(id)}`, {
+        headers: authHeaders(),
+        cache: "no-store",
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "Unable to find AI profile.");
+      window.location.href = `/admin-demo/profiles?mangalId=${encodeURIComponent(data.profile.mangalsaathId)}`;
+    } catch (err) {
+      setError(err.message);
+      setBusy(false);
+    }
+  }
+
   if (!mount) return null;
 
   const enabled = state?.enabled === true;
@@ -91,7 +114,7 @@ export default function AdminDemoVisibilityQuickControl() {
         <div>
           <small style={styles.eyebrow}>SUPER ADMIN CONTROL PANEL</small>
           <strong style={styles.title}>AI Profile Control & Workspace</strong>
-          <p style={styles.subtitle}>Control AI profile availability and open the protected profile-management tools directly from Admin Console.</p>
+          <p style={styles.subtitle}>Control AI profile availability and amend protected AI profile details directly from Admin Console.</p>
         </div>
       </div>
 
@@ -120,10 +143,28 @@ export default function AdminDemoVisibilityQuickControl() {
         </article>
       </div>
 
+      <div style={styles.lookupPanel}>
+        <div>
+          <strong style={styles.sectionTitle}>Find & Edit AI Profile by Mangal ID</strong>
+          <small style={styles.help}>Enter the exact permanent profile ID, for example MangalA1B2C3. The ID itself cannot be edited.</small>
+        </div>
+        <div style={styles.lookupActions}>
+          <input
+            style={styles.lookupInput}
+            value={mangalId}
+            maxLength={12}
+            placeholder="Mangalxxxxxx"
+            onChange={(e) => setMangalId(e.target.value)}
+            onKeyDown={(e) => { if (e.key === "Enter") findAndEdit(); }}
+          />
+          <button style={styles.lookupButton} disabled={busy} onClick={findAndEdit}>Find & Edit</button>
+        </div>
+      </div>
+
       <div style={styles.workspacePanel}>
         <div>
           <strong style={styles.sectionTitle}>AI Profile Workspace</strong>
-          <small style={styles.help}>Super Admin can edit AI profile details, manage gallery photos and run controlled gallery batches.</small>
+          <small style={styles.help}>Browse all AI profiles, edit details, manage gallery photos and run controlled gallery batches.</small>
         </div>
         <div style={styles.workspaceActions}>
           <a style={styles.workspaceLinkPrimary} href="/admin-demo/profiles">Edit AI Profiles</a>
@@ -166,6 +207,10 @@ const styles = {
   disabledText: { display: "block", color: "#7b6b71", fontSize: 12, lineHeight: 1.4, marginTop: 18 },
   on: { padding: "4px 7px", borderRadius: 999, background: "#e1f5e9", color: "#26704f", fontWeight: 800, fontSize: 9 },
   off: { padding: "4px 7px", borderRadius: 999, background: "#efe8eb", color: "#6f5c62", fontWeight: 800, fontSize: 9 },
+  lookupPanel: { display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12, marginTop: 14, padding: 14, border: "1px solid #dcc8cf", borderRadius: 12, background: "#fff8fb" },
+  lookupActions: { display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" },
+  lookupInput: { minWidth: 210, border: "1px solid #bda8af", borderRadius: 8, padding: "10px 11px", fontSize: 14 },
+  lookupButton: { border: 0, borderRadius: 8, padding: "10px 13px", background: "#741f39", color: "#fff", fontWeight: 700, cursor: "pointer" },
   workspacePanel: { display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", gap: 12, marginTop: 14, padding: 14, border: "1px solid #eadde1", borderRadius: 12, background: "#fcfafb" },
   workspaceActions: { display: "flex", flexWrap: "wrap", gap: 8 },
   workspaceLinkPrimary: { display: "inline-block", textDecoration: "none", border: 0, borderRadius: 8, padding: "10px 13px", background: "#741f39", color: "#fff", fontWeight: 700 },
