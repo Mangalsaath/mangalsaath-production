@@ -21,7 +21,8 @@ async function api(path, options = {}) {
 const emptyForm = {
   firstName: "", lastName: "", gender: "", dateOfBirth: "", placeOfBirth: "", timeOfBirth: "",
   age: "", maritalStatus: "", height: "", religion: "", caste: "", subCaste: "", gotra: "",
-  education: "", profession: "", annualCtc: "", country: "India", state: "", city: "", about: "",
+  education: "", profession: "", annualCtc: "", brothersMarried: "", brothersUnmarried: "",
+  sistersMarried: "", sistersUnmarried: "", country: "India", state: "", city: "", about: "",
   partnerAgeMin: "", partnerAgeMax: "", partnerReligion: "", partnerCaste: "", partnerLocation: "",
   partnerMaritalStatus: "", partnerEducation: "", partnerProfession: "",
 };
@@ -45,6 +46,10 @@ function profileToForm(profile) {
     education: profile.education || "",
     profession: profile.profession || "",
     annualCtc: profile.annualCtc || "",
+    brothersMarried: profile.brothersMarried ?? 0,
+    brothersUnmarried: profile.brothersUnmarried ?? 0,
+    sistersMarried: profile.sistersMarried ?? 0,
+    sistersUnmarried: profile.sistersUnmarried ?? 0,
     country: profile.country || "India",
     state: profile.state || "",
     city: profile.city || "",
@@ -59,6 +64,8 @@ function profileToForm(profile) {
     partnerProfession: profile.partnerProfession || "",
   };
 }
+
+const isMangalId = (value) => /^Mangal[A-Z0-9]{6}$/i.test(String(value || "").trim());
 
 export default function EditAiProfilesPage() {
   const [profiles, setProfiles] = useState([]);
@@ -77,12 +84,12 @@ export default function EditAiProfilesPage() {
       const data = await api(`/api/admin/demo-profiles?page=${page}&pageSize=50&search=${encodeURIComponent(q)}`);
       setProfiles(data.profiles || []);
       setPagination(data.pagination || { page: 1, pages: 1, total: 0 });
+      return data;
     } catch (err) {
       setError(err.message);
+      return null;
     }
   }, [query]);
-
-  useEffect(() => { load(1, ""); }, []);
 
   function startEdit(profile) {
     setEditing(profile);
@@ -92,23 +99,62 @@ export default function EditAiProfilesPage() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
+  const loadByMangalId = useCallback(async (id, openEditor = true) => {
+    const normalized = String(id || "").trim();
+    if (!isMangalId(normalized)) {
+      setError("Enter Mangal ID in Mangalxxxxxx format.");
+      return null;
+    }
+    setBusy(true);
+    setError("");
+    try {
+      const data = await api(`/api/admin/demo-profiles/by-mangal-id?id=${encodeURIComponent(normalized)}`);
+      const profile = data.profile;
+      setProfiles(profile ? [profile] : []);
+      setPagination({ page: 1, pages: 1, total: profile ? 1 : 0 });
+      setQuery(profile?.mangalsaathId || normalized);
+      setSearch(profile?.mangalsaathId || normalized);
+      if (profile && openEditor) startEdit(profile);
+      return profile;
+    } catch (err) {
+      setProfiles([]);
+      setPagination({ page: 1, pages: 1, total: 0 });
+      setError(err.message);
+      return null;
+    } finally {
+      setBusy(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const mangalId = params.get("mangalId");
+    if (mangalId) {
+      setSearch(mangalId);
+      loadByMangalId(mangalId, true);
+    } else {
+      load(1, "");
+    }
+  }, []);
+
   function setField(name, value) {
     setForm((current) => ({ ...current, [name]: value }));
   }
 
   async function save() {
-    if (!editing) return;
+    if (!editing?.mangalsaathId) return;
     setBusy(true);
     setError("");
     setNotice("");
     try {
-      const result = await api("/api/admin/demo-profiles", {
+      const result = await api("/api/admin/demo-profiles/by-mangal-id", {
         method: "POST",
-        body: JSON.stringify({ action: "edit", profileId: editing.id, ...form }),
+        body: JSON.stringify({ mangalsaathId: editing.mangalsaathId, ...form }),
       });
       setNotice(result.message || "AI profile updated.");
-      setEditing(null);
-      await load(pagination.page, query);
+      setEditing(result.profile);
+      setForm(profileToForm(result.profile));
+      setProfiles((current) => current.map((item) => item.id === result.profile.id ? result.profile : item));
     } catch (err) {
       setError(err.message);
     } finally {
@@ -119,7 +165,12 @@ export default function EditAiProfilesPage() {
   async function runSearch(e) {
     e.preventDefault();
     const q = search.trim();
+    if (isMangalId(q)) {
+      await loadByMangalId(q, true);
+      return;
+    }
     setQuery(q);
+    setEditing(null);
     await load(1, q);
   }
 
@@ -129,7 +180,7 @@ export default function EditAiProfilesPage() {
         <div>
           <small style={s.eyebrow}>SUPER ADMIN ONLY</small>
           <h1 style={s.h1}>Edit AI Profiles</h1>
-          <p style={s.muted}>Search and amend synthetic profile details. Mangalsaath ID and AI visibility are preserved automatically.</p>
+          <p style={s.muted}>Enter a Mangal ID or browse AI profiles, then amend profile details. Mangal ID and AI visibility are preserved automatically.</p>
         </div>
         <div style={s.headerActions}>
           <a href="/admin-demo/gallery" style={s.link}>AI Gallery</a>
@@ -140,17 +191,27 @@ export default function EditAiProfilesPage() {
       {error && <div style={s.error}>{error}</div>}
       {notice && <div style={s.success}>{notice}</div>}
 
+      <section style={s.lookupBox}>
+        <b>Find AI profile by Mangal ID</b>
+        <form onSubmit={runSearch} style={s.searchRow}>
+          <input style={s.search} placeholder="Mangalxxxxxx" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <button style={s.primary} type="submit" disabled={busy}>{busy ? "Please wait..." : "Find / Search"}</button>
+          {query && <button type="button" style={s.secondary} onClick={async () => { setSearch(""); setQuery(""); setEditing(null); await load(1, ""); }}>Clear</button>}
+        </form>
+      </section>
+
       {editing && (
         <section style={s.panel}>
           <div style={s.panelHead}>
             <div>
               <h2 style={s.h2}>Edit: {editing.name}</h2>
-              <p style={s.idLine}><b>Mangalsaath ID: {editing.mangalsaathId || "—"}</b></p>
-              <p style={s.muted}>Internal profile key: {editing.id} · Current visibility: {editing.demoVisible ? "Enabled" : "Hidden"}</p>
+              <p style={s.idLine}><b>Mangalsaath ID: {editing.mangalsaathId || "—"}</b> · Locked</p>
+              <p style={s.muted}>Current visibility: {editing.demoVisible ? "Enabled" : "Hidden"}</p>
             </div>
             <button style={s.secondary} onClick={() => setEditing(null)} disabled={busy}>Close</button>
           </div>
 
+          <h3 style={s.h3}>Personal details</h3>
           <div style={s.grid}>
             <Field label="First name" value={form.firstName} set={(v) => setField("firstName", v)} />
             <Field label="Last name" value={form.lastName} set={(v) => setField("lastName", v)} />
@@ -173,6 +234,14 @@ export default function EditAiProfilesPage() {
             <Field label="Time of birth" type="time" value={form.timeOfBirth} set={(v) => setField("timeOfBirth", v)} />
           </div>
 
+          <h3 style={s.h3}>Family details</h3>
+          <div style={s.grid}>
+            <Field label="Brothers married" type="number" value={form.brothersMarried} set={(v) => setField("brothersMarried", v)} />
+            <Field label="Brothers unmarried" type="number" value={form.brothersUnmarried} set={(v) => setField("brothersUnmarried", v)} />
+            <Field label="Sisters married" type="number" value={form.sistersMarried} set={(v) => setField("sistersMarried", v)} />
+            <Field label="Sisters unmarried" type="number" value={form.sistersUnmarried} set={(v) => setField("sistersUnmarried", v)} />
+          </div>
+
           <label style={s.label}>About
             <textarea style={{ ...s.input, minHeight: 110 }} value={form.about} onChange={(e) => setField("about", e.target.value)} />
           </label>
@@ -190,12 +259,13 @@ export default function EditAiProfilesPage() {
           </div>
 
           <div style={s.photoNote}>
-            <b>Photos:</b> {Array.isArray(editing.photos) ? editing.photos.length : 0} attached · Primary photo: {editing.primaryPhoto || "Not set"}. Photo replacement/gallery management remains a separate controlled action.
+            <b>Photos:</b> {Array.isArray(editing.photos) ? editing.photos.length : 0} attached · Primary photo: {editing.primaryPhoto || "Not set"}. Use AI Gallery for photo add/replace/remove/primary controls.
           </div>
 
           <div style={s.actions}>
             <button style={s.primary} onClick={save} disabled={busy}>{busy ? "Saving..." : "Save AI Profile"}</button>
-            <button style={s.secondary} onClick={() => setEditing(null)} disabled={busy}>Cancel</button>
+            <a href="/admin-demo/gallery" style={s.secondaryLink}>Manage Photos</a>
+            <button style={s.secondary} onClick={() => setEditing(null)} disabled={busy}>Close</button>
           </div>
         </section>
       )}
@@ -203,22 +273,16 @@ export default function EditAiProfilesPage() {
       <section style={s.panel}>
         <div style={s.panelHead}>
           <div>
-            <h2 style={s.h2}>All AI Profiles</h2>
-            <p style={s.muted}>{pagination.total} profiles · Page {pagination.page} of {pagination.pages}</p>
+            <h2 style={s.h2}>AI Profiles</h2>
+            <p style={s.muted}>{pagination.total} profile(s) · Page {pagination.page} of {pagination.pages}</p>
           </div>
-          <button style={s.secondary} onClick={() => load(pagination.page, query)} disabled={busy}>Refresh</button>
+          <button style={s.secondary} onClick={() => isMangalId(query) ? loadByMangalId(query, false) : load(pagination.page, query)} disabled={busy}>Refresh</button>
         </div>
-
-        <form onSubmit={runSearch} style={s.searchRow}>
-          <input style={s.search} placeholder="Search name, city, religion, caste, education, profession, income..." value={search} onChange={(e) => setSearch(e.target.value)} />
-          <button style={s.primary} type="submit">Search</button>
-          {query && <button type="button" style={s.secondary} onClick={async () => { setSearch(""); setQuery(""); await load(1, ""); }}>Clear</button>}
-        </form>
 
         <div style={s.tableWrap}>
           <table style={s.table}>
             <thead>
-              <tr><th style={s.th}>Mangalsaath ID / Profile</th><th style={s.th}>Religion / Community</th><th style={s.th}>Education / Profession</th><th style={s.th}>Location</th><th style={s.th}>Income</th><th style={s.th}>Status</th><th style={s.th}>Action</th></tr>
+              <tr><th style={s.th}>Mangal ID / Profile</th><th style={s.th}>Religion / Community</th><th style={s.th}>Education / Profession</th><th style={s.th}>Location</th><th style={s.th}>Income</th><th style={s.th}>Status</th><th style={s.th}>Action</th></tr>
             </thead>
             <tbody>
               {profiles.map((profile) => (
@@ -237,11 +301,13 @@ export default function EditAiProfilesPage() {
           {!profiles.length && <p style={s.muted}>No AI profiles found.</p>}
         </div>
 
-        <div style={s.pagination}>
-          <button style={s.secondary} disabled={pagination.page <= 1 || busy} onClick={() => load(pagination.page - 1, query)}>Previous</button>
-          <span>Page {pagination.page} / {pagination.pages}</span>
-          <button style={s.secondary} disabled={pagination.page >= pagination.pages || busy} onClick={() => load(pagination.page + 1, query)}>Next</button>
-        </div>
+        {!isMangalId(query) && (
+          <div style={s.pagination}>
+            <button style={s.secondary} disabled={pagination.page <= 1 || busy} onClick={() => load(pagination.page - 1, query)}>Previous</button>
+            <span>Page {pagination.page} / {pagination.pages}</span>
+            <button style={s.secondary} disabled={pagination.page >= pagination.pages || busy} onClick={() => load(pagination.page + 1, query)}>Next</button>
+          </div>
+        )}
       </section>
     </main>
   );
@@ -258,16 +324,18 @@ const s = {
   eyebrow: { color: "#741f39", fontWeight: 800, letterSpacing: 1.2 },
   h1: { margin: "7px 0 6px", fontSize: 36 }, h2: { margin: "0 0 8px", fontSize: 22 }, h3: { margin: "20px 0 12px" },
   muted: { color: "#776a6e", lineHeight: 1.5 }, link: { color: "#741f39", textDecoration: "none", fontWeight: 700 },
-  idLine: { margin: "6px 0", color: "#741f39", fontSize: 15 }, memberId: { color: "#741f39", fontSize: 12 },
+  idLine: { margin: "6px 0", color: "#741f39", fontSize: 15 }, memberId: { color: "#741f39", fontSize: 13 },
+  lookupBox: { background: "#fff8fb", border: "1px solid #dcc8cf", borderRadius: 14, padding: 16, marginBottom: 18 },
   panel: { background: "#fff", border: "1px solid #eadde1", borderRadius: 16, padding: 20, marginBottom: 20, boxShadow: "0 10px 30px rgba(77,16,37,.05)" },
   panelHead: { display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14, marginBottom: 16 },
   grid: { display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(220px,1fr))", gap: 12 },
-  label: { display: "grid", gap: 6, fontWeight: 700 }, input: { width: "100%", padding: 10, border: "1px solid #cebfc4", borderRadius: 8, boxSizing: "border-box" },
-  actions: { display: "flex", gap: 10, marginTop: 18 }, primary: { border: 0, borderRadius: 9, padding: "10px 14px", background: "#741f39", color: "#fff", fontWeight: 700, cursor: "pointer" },
+  label: { display: "grid", gap: 6, fontWeight: 700, marginTop: 12 }, input: { width: "100%", padding: 10, border: "1px solid #cebfc4", borderRadius: 8, boxSizing: "border-box" },
+  actions: { display: "flex", flexWrap: "wrap", gap: 10, marginTop: 18 }, primary: { border: 0, borderRadius: 9, padding: "10px 14px", background: "#741f39", color: "#fff", fontWeight: 700, cursor: "pointer" },
   secondary: { border: "1px solid #741f39", borderRadius: 9, padding: "9px 13px", background: "#fff", color: "#741f39", fontWeight: 700, cursor: "pointer" },
+  secondaryLink: { border: "1px solid #741f39", borderRadius: 9, padding: "9px 13px", background: "#fff", color: "#741f39", fontWeight: 700, textDecoration: "none" },
   error: { padding: 13, borderRadius: 10, background: "#fdeaea", color: "#8a1f2d", marginBottom: 14 }, success: { padding: 13, borderRadius: 10, background: "#e8f6ef", color: "#26704f", marginBottom: 14 },
   photoNote: { marginTop: 16, padding: 12, borderRadius: 10, background: "#faf6f7", color: "#5c4b51" },
-  searchRow: { display: "flex", flexWrap: "wrap", gap: 9, marginBottom: 16 }, search: { flex: "1 1 420px", padding: 11, border: "1px solid #cebfc4", borderRadius: 9 },
+  searchRow: { display: "flex", flexWrap: "wrap", gap: 9, marginTop: 10 }, search: { flex: "1 1 420px", padding: 11, border: "1px solid #cebfc4", borderRadius: 9 },
   tableWrap: { overflowX: "auto" }, table: { width: "100%", borderCollapse: "collapse", minWidth: 1120 }, th: { textAlign: "left", padding: 10, borderBottom: "1px solid #eadde1", color: "#776a6e", fontSize: 13 }, td: { padding: 11, borderBottom: "1px solid #f0e5e8", verticalAlign: "top" },
   badgeOn: { display: "inline-block", padding: "5px 8px", borderRadius: 999, background: "#e8f6ef", color: "#26704f", fontSize: 12, fontWeight: 700 }, badgeOff: { display: "inline-block", padding: "5px 8px", borderRadius: 999, background: "#f5edf0", color: "#6f5c62", fontSize: 12, fontWeight: 700 },
   editButton: { border: "1px solid #741f39", borderRadius: 7, padding: "7px 11px", background: "#fff", color: "#741f39", fontWeight: 700, cursor: "pointer" }, pagination: { display: "flex", justifyContent: "center", alignItems: "center", gap: 14, marginTop: 18 },
