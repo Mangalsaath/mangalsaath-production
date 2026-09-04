@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin, ADMIN_PERMISSIONS, isAdminAuthorizationError } from "@/lib/admin-auth";
 import { appendAdminAudit } from "@/lib/admin-audit";
 import { cleanText, rateLimit } from "@/lib/security";
-import { mangalsaathIdForProfile, normalizeMangalsaathId } from "@/lib/mangalsaath-id";
+import { mangalsaathIdForProfile, mangalNumberFromId, normalizeMangalsaathId } from "@/lib/mangalsaath-id";
 
 function fail(error) {
   if (isAdminAuthorizationError(error)) {
@@ -23,7 +23,7 @@ function assertSuperAdmin(admin) {
 function serialize(profile) {
   return {
     ...profile,
-    mangalsaathId: mangalsaathIdForProfile(profile.id),
+    mangalsaathId: mangalsaathIdForProfile(profile),
     dateOfBirth: profile.dateOfBirth?.toISOString().slice(0, 10) || "",
     demoVisibleFrom: profile.demoVisibleFrom?.toISOString() || null,
     demoVisibleUntil: profile.demoVisibleUntil?.toISOString() || null,
@@ -48,21 +48,16 @@ function optionalNumber(value, { min, max } = {}) {
 
 async function findAiProfileByMangalId(value) {
   const requestedId = normalizeMangalsaathId(value);
-  if (!requestedId) return { error: "Enter a valid Mangal ID in Mangalxxxxxx format.", status: 400 };
+  const mangalNumber = mangalNumberFromId(requestedId);
+  if (!requestedId || !mangalNumber) {
+    return { error: "Enter a valid Mangal ID, for example MANGAL1001.", status: 400 };
+  }
 
-  const ids = await prisma.memberProfile.findMany({
-    where: { isDemoProfile: true },
-    select: { id: true },
-    orderBy: { id: "asc" },
-  });
-  const matched = ids.find((item) => mangalsaathIdForProfile(item.id) === requestedId);
-  if (!matched) return { error: "No AI profile found for this Mangal ID.", status: 404 };
-
-  const profile = await prisma.memberProfile.findUnique({
-    where: { id: matched.id },
+  const profile = await prisma.memberProfile.findFirst({
+    where: { isDemoProfile: true, mangalNumber },
     include: { user: true },
   });
-  if (!profile?.isDemoProfile) return { error: "AI profile not found.", status: 404 };
+  if (!profile) return { error: "No AI profile found for this Mangal ID.", status: 404 };
   return { profile, requestedId };
 }
 
