@@ -5,7 +5,7 @@ import { requireAdmin, ADMIN_PERMISSIONS, isAdminAuthorizationError } from "@/li
 import { appendAdminAudit } from "@/lib/admin-audit";
 import { cleanText, rateLimit } from "@/lib/security";
 import { demoVisibilityWindow, getDemoProfileControl, saveDemoProfileControl } from "@/lib/demo-profile-control";
-import { mangalsaathIdForProfile } from "@/lib/mangalsaath-id";
+import { allocateMangalNumber, mangalsaathIdForProfile } from "@/lib/mangalsaath-id";
 
 function fail(error) {
   if (isAdminAuthorizationError(error)) {
@@ -190,9 +190,11 @@ export async function POST(request) {
           },
         });
 
+        const mangalNumber = await allocateMangalNumber(tx, true);
         return tx.memberProfile.create({
           data: {
             id: profileId,
+            mangalNumber,
             userId,
             name: `${firstName} ${lastName}`,
             gender: cleanText(body.gender, 30) || null,
