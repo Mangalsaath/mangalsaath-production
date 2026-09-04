@@ -84,9 +84,9 @@ export default function AdminDemoVisibilityQuickControl() {
   }
 
   async function findAndEdit() {
-    const id = mangalId.trim();
-    if (!/^Mangal[A-Z0-9]{6}$/i.test(id)) {
-      setError("Enter Mangal ID in Mangalxxxxxx format.");
+    const id = mangalId.trim().toUpperCase();
+    if (!/^MANGAL\d{4,}$/.test(id) || Number(id.slice(6)) < 1001) {
+      setError("Enter a valid Mangal ID, for example MANGAL1001.");
       return;
     }
     setBusy(true);
@@ -146,15 +146,15 @@ export default function AdminDemoVisibilityQuickControl() {
       <div style={styles.lookupPanel}>
         <div>
           <strong style={styles.sectionTitle}>Find & Edit AI Profile by Mangal ID</strong>
-          <small style={styles.help}>Enter the exact permanent profile ID, for example MangalA1B2C3. The ID itself cannot be edited.</small>
+          <small style={styles.help}>Enter the exact permanent profile ID, for example MANGAL1001. The ID itself cannot be edited.</small>
         </div>
         <div style={styles.lookupActions}>
           <input
             style={styles.lookupInput}
             value={mangalId}
-            maxLength={12}
-            placeholder="Mangalxxxxxx"
-            onChange={(e) => setMangalId(e.target.value)}
+            maxLength={20}
+            placeholder="MANGAL1001"
+            onChange={(e) => setMangalId(e.target.value.toUpperCase())}
             onKeyDown={(e) => { if (e.key === "Enter") findAndEdit(); }}
           />
           <button style={styles.lookupButton} disabled={busy} onClick={findAndEdit}>Find & Edit</button>
