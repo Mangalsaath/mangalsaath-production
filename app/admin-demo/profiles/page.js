@@ -65,7 +65,11 @@ function profileToForm(profile) {
   };
 }
 
-const isMangalId = (value) => /^Mangal[A-Z0-9]{6}$/i.test(String(value || "").trim());
+const isMangalId = (value) => {
+  const text = String(value || "").trim().toUpperCase();
+  const match = /^MANGAL(\d{4,})$/.exec(text);
+  return Boolean(match && Number(match[1]) >= 1001);
+};
 
 export default function EditAiProfilesPage() {
   const [profiles, setProfiles] = useState([]);
@@ -100,9 +104,9 @@ export default function EditAiProfilesPage() {
   }
 
   const loadByMangalId = useCallback(async (id, openEditor = true) => {
-    const normalized = String(id || "").trim();
+    const normalized = String(id || "").trim().toUpperCase();
     if (!isMangalId(normalized)) {
-      setError("Enter Mangal ID in Mangalxxxxxx format.");
+      setError("Enter a valid Mangal ID, for example MANGAL1001.");
       return null;
     }
     setBusy(true);
@@ -130,7 +134,7 @@ export default function EditAiProfilesPage() {
     const params = new URLSearchParams(window.location.search);
     const mangalId = params.get("mangalId");
     if (mangalId) {
-      setSearch(mangalId);
+      setSearch(mangalId.toUpperCase());
       loadByMangalId(mangalId, true);
     } else {
       load(1, "");
@@ -194,7 +198,7 @@ export default function EditAiProfilesPage() {
       <section style={s.lookupBox}>
         <b>Find AI profile by Mangal ID</b>
         <form onSubmit={runSearch} style={s.searchRow}>
-          <input style={s.search} placeholder="Mangalxxxxxx" value={search} onChange={(e) => setSearch(e.target.value)} />
+          <input style={s.search} placeholder="MANGAL1001" value={search} onChange={(e) => setSearch(e.target.value.toUpperCase())} />
           <button style={s.primary} type="submit" disabled={busy}>{busy ? "Please wait..." : "Find / Search"}</button>
           {query && <button type="button" style={s.secondary} onClick={async () => { setSearch(""); setQuery(""); setEditing(null); await load(1, ""); }}>Clear</button>}
         </form>
