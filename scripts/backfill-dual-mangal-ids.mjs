@@ -139,11 +139,8 @@ async function main() {
   console.log(`[Mangal ID] Assigned ${aiAssignments.length} AI profile IDs from MANGAL1001 and ${realAssignments.length} real profile IDs from MANGAL10001.`);
 }
 
-main()
-  .catch((error) => {
-    console.error("[Mangal ID] Dual-series backfill failed:", error);
-    process.exitCode = 1;
-  })
-  .finally(async () => {
-    await prisma.$disconnect();
-  });
+try {
+  await main();
+} finally {
+  await prisma.$disconnect();
+}
