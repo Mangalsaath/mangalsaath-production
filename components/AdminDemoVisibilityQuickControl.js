@@ -11,11 +11,23 @@ function authHeaders() {
   };
 }
 
+async function fetchWithTimeout(url, options = {}, timeoutMs = 12000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...options, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 export default function AdminDemoVisibilityQuickControl() {
   const [mount, setMount] = useState(null);
   const [state, setState] = useState(null);
-  const [busy, setBusy] = useState(false);
+  const [searchBusy, setSearchBusy] = useState(false);
+  const [visibilityBusy, setVisibilityBusy] = useState(false);
   const [error, setError] = useState("");
+  const [statusMessage, setStatusMessage] = useState("");
   const [mangalId, setMangalId] = useState("");
   const [lookupResult, setLookupResult] = useState(null);
 
@@ -23,7 +35,7 @@ export default function AdminDemoVisibilityQuickControl() {
     function attach() {
       const adminMain = document.querySelector(".fullAdminConsole .adminMain");
       if (!adminMain) {
-        setMount(null);
+        setMount((current) => (current ? null : current));
         return;
       }
       let node = document.getElementById("admin-ai-profile-control-mount");
@@ -32,10 +44,14 @@ export default function AdminDemoVisibilityQuickControl() {
         node.id = "admin-ai-profile-control-mount";
         node.style.width = "100%";
         node.style.marginBottom = "18px";
+        node.style.position = "relative";
+        node.style.zIndex = "2";
+        node.style.pointerEvents = "auto";
         adminMain.prepend(node);
       }
-      setMount(node);
+      setMount((current) => (current === node ? current : node));
     }
+
     attach();
     const observer = new MutationObserver(attach);
     observer.observe(document.body, { childList: true, subtree: true });
@@ -45,55 +61,64 @@ export default function AdminDemoVisibilityQuickControl() {
   const load = useCallback(async () => {
     if (!mount) return;
     try {
-      const response = await fetch("/api/admin/demo-visibility", {
+      const response = await fetchWithTimeout("/api/admin/demo-visibility", {
         headers: authHeaders(),
         cache: "no-store",
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "Unable to read AI profile visibility.");
       setState(data);
-      setError("");
     } catch (err) {
-      setError(err.message);
+      setError(err?.name === "AbortError" ? "Admin control request timed out. Please try again." : err.message);
     }
   }, [mount]);
 
-  useEffect(() => { load(); }, [load]);
+  useEffect(() => {
+    load();
+  }, [load]);
 
-  async function act(action, extra = {}) {
-    setBusy(true);
+  async function act(action) {
+    if (visibilityBusy) return;
+    setVisibilityBusy(true);
     setError("");
+    setStatusMessage("");
     try {
-      const response = await fetch("/api/admin/demo-visibility", {
+      const response = await fetchWithTimeout("/api/admin/demo-visibility", {
         method: "POST",
         headers: authHeaders(),
-        body: JSON.stringify({ action, ...extra }),
+        body: JSON.stringify({ action }),
         cache: "no-store",
       });
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "Unable to update AI profile control.");
       setState(data);
+      setStatusMessage(action === "enable" ? "AI profiles enabled." : "AI profiles disabled.");
     } catch (err) {
-      setError(err.message);
+      setError(err?.name === "AbortError" ? "AI visibility request timed out. Please try again." : err.message);
     } finally {
-      setBusy(false);
+      setVisibilityBusy(false);
     }
   }
 
   async function findProfile(event) {
     event?.preventDefault?.();
+    if (searchBusy) return;
+
     const id = mangalId.trim().toUpperCase();
     if (!/^MANGAL\d{4,}$/.test(id) || Number(id.slice(6)) < 1001) {
       setError("Enter a valid Mangal ID, for example MANGAL1001 or MANGAL10001.");
+      setStatusMessage("");
       setLookupResult(null);
       return;
     }
 
-    setBusy(true);
+    setSearchBusy(true);
     setError("");
+    setStatusMessage(`Searching ${id}…`);
     setLookupResult(null);
+
     try {
-      const response = await fetch(`/api/admin/profiles/by-mangal-id?id=${encodeURIComponent(id)}`, {
+      const response = await fetchWithTimeout(`/api/admin/profiles/by-mangal-id?id=${encodeURIComponent(id)}`, {
         headers: authHeaders(),
         cache: "no-store",
       });
@@ -101,15 +126,18 @@ export default function AdminDemoVisibilityQuickControl() {
       if (!response.ok) throw new Error(data.error || "Unable to find profile.");
 
       if (data.type === "ai") {
+        setStatusMessage(`AI profile ${data.mangalsaathId} found. Opening editor…`);
         window.location.assign(`/admin-demo/profiles?mangalId=${encodeURIComponent(data.mangalsaathId)}`);
         return;
       }
 
       setLookupResult(data);
+      setStatusMessage(`Real profile ${data.mangalsaathId} found.`);
     } catch (err) {
-      setError(err.message);
+      setStatusMessage("");
+      setError(err?.name === "AbortError" ? "Profile lookup timed out. Please try again." : err.message);
     } finally {
-      setBusy(false);
+      setSearchBusy(false);
     }
   }
 
@@ -120,7 +148,7 @@ export default function AdminDemoVisibilityQuickControl() {
     <section style={styles.panel} aria-label="Super Admin profile control">
       <small style={styles.eyebrow}>SUPER ADMIN CONTROL PANEL</small>
       <strong style={styles.title}>Profile Control & Workspace</strong>
-      <p style={styles.subtitle}>Search any profile by Mangal ID. AI profiles open in the AI editor; real profiles are shown here for exact identification.</p>
+      <p style={styles.subtitle}>Search any profile by Mangal ID. AI profiles open in the AI editor; real profiles are shown here.</p>
 
       <div style={styles.profileGrid}>
         <article style={styles.actualCard}>
@@ -139,38 +167,34 @@ export default function AdminDemoVisibilityQuickControl() {
         </article>
       </div>
 
-      <div style={styles.lookupPanel}>
+      <form style={styles.lookupPanel} onSubmit={findProfile}>
         <div>
           <strong style={styles.sectionTitle}>Search Profile by Mangal ID</strong>
           <small style={styles.help}>AI: MANGAL1001 onward · Real: MANGAL10001 onward</small>
         </div>
         <div style={styles.lookupActions}>
           <input
+            name="mangalId"
             style={styles.lookupInput}
             value={mangalId}
             maxLength={20}
             placeholder="MANGAL1001 / MANGAL10001"
             onChange={(e) => setMangalId(e.target.value.toUpperCase())}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                findProfile(e);
-              }
-            }}
           />
-          <button type="button" style={styles.lookupButton} disabled={busy} onClick={findProfile}>
-            {busy ? "Searching…" : "Find Profile"}
+          <button type="submit" style={styles.lookupButton} disabled={searchBusy}>
+            {searchBusy ? "Searching…" : "Find Profile"}
           </button>
         </div>
-      </div>
+      </form>
+
+      {statusMessage && <p style={styles.status}>{statusMessage}</p>}
+      {error && <p style={styles.error}>{error}</p>}
 
       {lookupResult?.type === "real" && (
         <div style={styles.resultCard}>
-          <div>
-            <span style={styles.realBadge}>REAL PROFILE</span>
-            <strong style={styles.resultName}>{lookupResult.profile?.name || `${lookupResult.user?.firstName || ""} ${lookupResult.user?.lastName || ""}`.trim()}</strong>
-            <b style={styles.resultId}>{lookupResult.mangalsaathId}</b>
-          </div>
+          <span style={styles.realBadge}>REAL PROFILE</span>
+          <strong style={styles.resultName}>{lookupResult.profile?.name || `${lookupResult.user?.firstName || ""} ${lookupResult.user?.lastName || ""}`.trim()}</strong>
+          <b style={styles.resultId}>{lookupResult.mangalsaathId}</b>
           <div style={styles.resultGrid}>
             <span><b>Status:</b> {lookupResult.user?.status || "—"}</span>
             <span><b>Approval:</b> {lookupResult.user?.approvalStatus || "—"}</span>
@@ -179,14 +203,13 @@ export default function AdminDemoVisibilityQuickControl() {
             <span><b>Email:</b> {lookupResult.user?.email || "—"}</span>
             <span><b>Mobile:</b> {lookupResult.user?.mobile || "—"}</span>
           </div>
-          <small style={styles.help}>Exact real-member match found. AI editing controls do not modify this real profile.</small>
         </div>
       )}
 
       <div style={styles.workspacePanel}>
         <div>
           <strong style={styles.sectionTitle}>AI Profile Workspace</strong>
-          <small style={styles.help}>Browse and edit AI profiles, manage photos and controlled gallery batches.</small>
+          <small style={styles.help}>These links remain usable even while a search request is running.</small>
         </div>
         <div style={styles.workspaceActions}>
           <a style={styles.workspaceLinkPrimary} href="/admin-demo/profiles">Edit AI Profiles</a>
@@ -195,13 +218,12 @@ export default function AdminDemoVisibilityQuickControl() {
         </div>
       </div>
 
-      {error && <p style={styles.error}>{error}</p>}
       <div style={styles.actions}>
-        <button type="button" style={styles.enable} disabled={busy || enabled} onClick={() => act("enable")}>
-          Enable AI Profiles
+        <button type="button" style={styles.enable} disabled={visibilityBusy || enabled} onClick={() => act("enable")}>
+          {visibilityBusy ? "Please wait…" : "Enable AI Profiles"}
         </button>
-        <button type="button" style={styles.disable} disabled={busy || !enabled} onClick={() => act("disable")}>
-          Disable AI Profiles
+        <button type="button" style={styles.disable} disabled={visibilityBusy || !enabled} onClick={() => act("disable")}>
+          {visibilityBusy ? "Please wait…" : "Disable AI Profiles"}
         </button>
       </div>
     </section>
@@ -211,7 +233,7 @@ export default function AdminDemoVisibilityQuickControl() {
 }
 
 const styles = {
-  panel: { width: "100%", boxSizing: "border-box", background: "#fff", border: "1px solid #eadde1", borderRadius: 16, boxShadow: "0 8px 24px rgba(77,16,37,.08)", padding: 18, fontFamily: "Arial, sans-serif", color: "#291d21" },
+  panel: { width: "100%", boxSizing: "border-box", position: "relative", zIndex: 2, pointerEvents: "auto", background: "#fff", border: "1px solid #eadde1", borderRadius: 16, boxShadow: "0 8px 24px rgba(77,16,37,.08)", padding: 18, fontFamily: "Arial, sans-serif", color: "#291d21" },
   eyebrow: { display: "block", fontSize: 10, letterSpacing: 1, color: "#741f39", fontWeight: 800, marginBottom: 4 },
   title: { display: "block", fontSize: 20 },
   subtitle: { margin: "5px 0 14px", color: "#71656a", fontSize: 13 },
@@ -233,6 +255,8 @@ const styles = {
   lookupActions: { display: "flex", flexWrap: "wrap", gap: 8, alignItems: "center" },
   lookupInput: { minWidth: 240, border: "1px solid #bda8af", borderRadius: 8, padding: "10px 11px", fontSize: 14 },
   lookupButton: { border: 0, borderRadius: 8, padding: "10px 13px", background: "#741f39", color: "#fff", fontWeight: 700, cursor: "pointer" },
+  status: { margin: "10px 0 0", padding: 10, borderRadius: 8, background: "#eef6ff", color: "#315d79", fontSize: 12 },
+  error: { margin: "10px 0 0", padding: 10, borderRadius: 8, background: "#fdeaea", color: "#8a1f2d", fontSize: 12 },
   resultCard: { marginTop: 12, padding: 14, border: "1px solid #cbdbe5", borderRadius: 12, background: "#f8fbfd" },
   resultName: { display: "block", fontSize: 17, marginBottom: 3 },
   resultId: { display: "block", color: "#741f39", fontSize: 15, marginBottom: 10 },
@@ -241,7 +265,6 @@ const styles = {
   workspaceActions: { display: "flex", flexWrap: "wrap", gap: 8 },
   workspaceLinkPrimary: { display: "inline-block", textDecoration: "none", border: 0, borderRadius: 8, padding: "10px 13px", background: "#741f39", color: "#fff", fontWeight: 700 },
   workspaceLink: { display: "inline-block", textDecoration: "none", border: "1px solid #741f39", borderRadius: 8, padding: "9px 12px", background: "#fff", color: "#741f39", fontWeight: 700 },
-  error: { margin: "12px 0 0", padding: 10, borderRadius: 8, background: "#fdeaea", color: "#8a1f2d", fontSize: 12 },
   actions: { display: "flex", flexWrap: "wrap", gap: 10, marginTop: 14 },
   enable: { minWidth: 180, border: 0, borderRadius: 8, padding: "11px 14px", background: "#741f39", color: "#fff", fontWeight: 700, cursor: "pointer" },
   disable: { minWidth: 180, border: "1px solid #a21d2d", borderRadius: 8, padding: "11px 14px", background: "#fff5f6", color: "#941f2e", fontWeight: 700, cursor: "pointer" },
