@@ -83,26 +83,16 @@ export default function AdminDemoVisibilityQuickControl() {
     }
   }
 
-  async function findAndEdit() {
+  function findAndEdit(event) {
+    event?.preventDefault?.();
     const id = mangalId.trim().toUpperCase();
     if (!/^MANGAL\d{4,}$/.test(id) || Number(id.slice(6)) < 1001) {
       setError("Enter a valid Mangal ID, for example MANGAL1001.");
       return;
     }
-    setBusy(true);
     setError("");
-    try {
-      const response = await fetch(`/api/admin/demo-profiles/by-mangal-id?id=${encodeURIComponent(id)}`, {
-        headers: authHeaders(),
-        cache: "no-store",
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.error || "Unable to find AI profile.");
-      window.location.href = `/admin-demo/profiles?mangalId=${encodeURIComponent(data.profile.mangalsaathId)}`;
-    } catch (err) {
-      setError(err.message);
-      setBusy(false);
-    }
+    setBusy(true);
+    window.location.assign(`/admin-demo/profiles?mangalId=${encodeURIComponent(id)}`);
   }
 
   if (!mount) return null;
@@ -155,9 +145,14 @@ export default function AdminDemoVisibilityQuickControl() {
             maxLength={20}
             placeholder="MANGAL1001"
             onChange={(e) => setMangalId(e.target.value.toUpperCase())}
-            onKeyDown={(e) => { if (e.key === "Enter") findAndEdit(); }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                findAndEdit(e);
+              }
+            }}
           />
-          <button style={styles.lookupButton} disabled={busy} onClick={findAndEdit}>Find & Edit</button>
+          <button type="button" style={styles.lookupButton} disabled={busy} onClick={findAndEdit}>Find & Edit</button>
         </div>
       </div>
 
@@ -175,10 +170,10 @@ export default function AdminDemoVisibilityQuickControl() {
 
       {error && <p style={styles.error}>{error}</p>}
       <div style={styles.actions}>
-        <button style={styles.enable} disabled={busy || enabled} onClick={() => act("enable")}>
+        <button type="button" style={styles.enable} disabled={busy || enabled} onClick={() => act("enable")}>
           {busy ? "Please wait…" : "Enable AI Profiles"}
         </button>
-        <button style={styles.disable} disabled={busy || !enabled} onClick={() => act("disable")}>
+        <button type="button" style={styles.disable} disabled={busy || !enabled} onClick={() => act("disable")}>
           Disable AI Profiles
         </button>
       </div>
