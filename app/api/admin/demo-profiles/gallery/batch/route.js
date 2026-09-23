@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin, ADMIN_PERMISSIONS, isAdminAuthorizationError } from "@/lib/admin-auth";
 import { appendAdminAudit } from "@/lib/admin-audit";
+import { isSuperAdminRole } from "@/lib/roles";
 import { cleanText, rateLimit } from "@/lib/security";
 
 const MAX_PROFILES = 10;
@@ -16,7 +17,7 @@ function fail(error) {
 }
 
 function assertSuperAdmin(admin) {
-  if (String(admin?.role || "").toLowerCase() !== "super_admin") {
+  if (!isSuperAdminRole(admin?.role)) {
     return NextResponse.json({ error: "Super Admin access required." }, { status: 403 });
   }
   return null;
@@ -98,7 +99,7 @@ export async function POST(request) {
 
   try {
     const { user: admin } = await requireAdmin(request, {
-      permission: ADMIN_PERMISSIONS.DEMO_PROFILES_WRITE,
+      permission: ADMIN_PERMISSIONS.DASHBOARD_READ,
       requireDualOtp: true,
     });
     const denied = assertSuperAdmin(admin);
