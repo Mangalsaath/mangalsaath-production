@@ -6,6 +6,7 @@ const TABS = [
   ["dashboard", "Dashboard"],
   ["members", "Members"],
   ["verification", "Verification"],
+  ["ai-profiles", "AI Profiles"],
   ["payments", "Payments"],
   ["plans", "Plans"],
   ["promotions", "Coupons & Offers"],
@@ -293,6 +294,32 @@ export default function AdminConsole({
                     <Empty text="Select a member to approve identity or verify the mobile number manually." />
                   )}
                 </Panel>
+              </div>
+            </>
+          )}
+
+          {tab === "ai-profiles" && (
+            <>
+              <AdminHeading
+                title="AI Profiles"
+                text="Search, edit, enable/disable, clone and manage all AI profile details."
+                action={<a className="adminAiPrimaryLink" href="/admin-demo/profiles">Open AI Profile Manager</a>}
+              />
+              <div className="adminPanel">
+                <h3>AI Profile Management</h3>
+                <p>
+                  Admin and Super Admin can edit all AI profile details, partner preferences,
+                  client reference, internal notes, photos and visibility. Mangal ID remains
+                  immutable to preserve profile identity and references.
+                </p>
+                <div className="adminActionBar">
+                  <a className="adminAiPrimaryLink" href="/admin-demo/profiles">
+                    Search / Edit AI Profiles
+                  </a>
+                  <a className="adminAiPrimaryLink" href="/admin-demo/gallery">
+                    Manage AI Photos
+                  </a>
+                </div>
               </div>
             </>
           )}
@@ -898,6 +925,19 @@ function MemberReview({ member, note, setNote, busy, act }) {
           onChange={(e) => setNote(e.target.value)}
         />
       </label>
+      {p.isDemoProfile && (
+        <div className="adminActionBar">
+          <a
+            className="adminAiPrimaryLink"
+            href={p.mangalsaathId ? `/admin-demo/profiles?mangalId=${encodeURIComponent(p.mangalsaathId)}` : "/admin-demo/profiles"}
+          >
+            Edit Complete AI Profile
+          </a>
+          <a className="adminAiPrimaryLink" href="/admin-demo/gallery">
+            Manage AI Photos
+          </a>
+        </div>
+      )}
       <div className="adminActionBar">
         <button
           disabled={busy || member.mobileVerified}
