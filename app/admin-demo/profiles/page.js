@@ -219,9 +219,9 @@ export default function EditAiProfilesPage() {
     <main style={s.page}>
       <header style={s.header}>
         <div>
-          <small style={s.eyebrow}>SUPER ADMIN ONLY</small>
+          <small style={s.eyebrow}>ADMIN / SUPER ADMIN</small>
           <h1 style={s.h1}>AI Profile Management</h1>
-          <p style={s.muted}>Super Admin control for AI profiles: edit, enable/disable, clone, manage client references, internal notes and photos.</p>
+          <p style={s.muted}>Admin / Super Admin control for AI profiles: edit all profile details, enable/disable, clone, manage client references, internal notes and photos.</p>
         </div>
         <div style={s.headerActions}>
           <a href="/admin-demo/gallery" style={s.link}>AI Gallery</a>
@@ -262,7 +262,7 @@ export default function EditAiProfilesPage() {
           <div style={s.panelHead}>
             <div>
               <h2 style={s.h2}>Edit: {editing.name}</h2>
-              <p style={s.idLine}><b>Mangalsaath ID: {editing.mangalsaathId || "—"}</b> · Locked</p>
+              <p style={s.idLine}><b>Mangalsaath ID: {editing.mangalsaathId || "—"}</b> · ID locked only (profile details are editable)</p>
               <p style={s.muted}>Current visibility: {editing.demoVisible ? "Enabled" : "Hidden"}</p>
             </div>
             <button style={s.secondary} onClick={() => setEditing(null)} disabled={busy}>Close</button>
@@ -272,7 +272,7 @@ export default function EditAiProfilesPage() {
           <div style={s.grid}>
             <Field label="Client reference" value={form.demoClientReference} set={(v) => setField("demoClientReference", v)} />
           </div>
-          <label style={s.label}>Internal notes — Super Admin only
+          <label style={s.label}>Internal notes — Admin only
             <textarea style={{ ...s.input, minHeight: 90 }} value={form.demoInternalNotes} onChange={(e) => setField("demoInternalNotes", e.target.value)} />
           </label>
 
