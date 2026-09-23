@@ -61,8 +61,10 @@ export async function GET(request) {
     const page = Math.max(1, Number(url.searchParams.get("page") || 1));
     const pageSize = Math.min(100, Math.max(10, Number(url.searchParams.get("pageSize") || 100)));
     const search = cleanText(url.searchParams.get("search") || "", 120);
+    const status = cleanText(url.searchParams.get("status") || "all", 20).toLowerCase();
     const where = {
       isDemoProfile: true,
+      ...(status === "enabled" ? { demoVisible: true } : status === "hidden" ? { demoVisible: false } : {}),
       ...(search
         ? {
             OR: [
@@ -74,6 +76,8 @@ export async function GET(request) {
               { education: { contains: search } },
               { profession: { contains: search } },
               { annualCtc: { contains: search } },
+              { demoClientReference: { contains: search } },
+              { demoInternalNotes: { contains: search } },
               { user: { firstName: { contains: search } } },
               { user: { lastName: { contains: search } } },
             ],
@@ -221,6 +225,8 @@ export async function POST(request) {
             demoVisibleUntil: window.expiresAt,
             demoCreatedBy: admin.id,
             demoLabel: cleanText(body.demoLabel, 80) || control.labelForAdmins,
+            demoClientReference: optionalText(body.demoClientReference, 120),
+            demoInternalNotes: optionalText(body.demoInternalNotes, 4000),
           },
           include: { user: true },
         });
@@ -284,6 +290,8 @@ export async function POST(request) {
         partnerMaritalStatus: optionalText(body.partnerMaritalStatus, 100),
         partnerEducation: optionalText(body.partnerEducation, 180),
         partnerProfession: optionalText(body.partnerProfession, 180),
+        demoClientReference: optionalText(body.demoClientReference, 120),
+        demoInternalNotes: optionalText(body.demoInternalNotes, 4000),
       };
 
       const changedFields = Object.entries(profileData)
@@ -333,6 +341,109 @@ export async function POST(request) {
         message: "AI profile updated. Mangalsaath ID and visibility status were preserved.",
         profile: serialize(updated),
       });
+    }
+
+    if (action === "clone") {
+      const unique = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
+      const clonedUserId = uid("demo_user");
+      const clonedProfileId = uid("demo_profile");
+      const cloned = await prisma.$transaction(async (tx) => {
+        await tx.user.create({
+          data: {
+            id: clonedUserId,
+            username: `demo_${unique}`,
+            firstName: profile.user.firstName,
+            lastName: profile.user.lastName,
+            email: `demo_${unique}@example.invalid`,
+            mobile: `demo_${unique}`.slice(0, 20),
+            passwordHash: "!synthetic-demo-no-login!",
+            role: "member",
+            status: "active",
+            emailVerified: true,
+            verified: true,
+            approvalStatus: "approved",
+            approvedBy: admin.id,
+            approvedAt: new Date(),
+            city: profile.city,
+            profession: profile.profession,
+          },
+        });
+        const mangalNumber = await allocateMangalNumber(tx, true);
+        return tx.memberProfile.create({
+          data: {
+            id: clonedProfileId,
+            mangalNumber,
+            userId: clonedUserId,
+            name: profile.name,
+            gender: profile.gender,
+            dateOfBirth: profile.dateOfBirth,
+            placeOfBirth: profile.placeOfBirth,
+            timeOfBirth: profile.timeOfBirth,
+            age: profile.age,
+            maritalStatus: profile.maritalStatus,
+            height: profile.height,
+            religion: profile.religion,
+            caste: profile.caste,
+            subCaste: profile.subCaste,
+            gotra: profile.gotra,
+            education: profile.education,
+            profession: profile.profession,
+            annualCtc: profile.annualCtc,
+            brothersMarried: profile.brothersMarried,
+            brothersUnmarried: profile.brothersUnmarried,
+            sistersMarried: profile.sistersMarried,
+            sistersUnmarried: profile.sistersUnmarried,
+            country: profile.country,
+            state: profile.state,
+            city: profile.city,
+            about: profile.about,
+            partnerAgeMin: profile.partnerAgeMin,
+            partnerAgeMax: profile.partnerAgeMax,
+            partnerReligion: profile.partnerReligion,
+            partnerCaste: profile.partnerCaste,
+            partnerLocation: profile.partnerLocation,
+            partnerMaritalStatus: profile.partnerMaritalStatus,
+            partnerEducation: profile.partnerEducation,
+            partnerProfession: profile.partnerProfession,
+            photos: profile.photos,
+            primaryPhoto: profile.primaryPhoto,
+            primaryPhotoData: profile.primaryPhotoData,
+            photoModerationStatus: profile.photoModerationStatus,
+            photoModerationNote: profile.photoModerationNote,
+            score: profile.score,
+            verified: profile.verified,
+            verificationStatus: profile.verificationStatus,
+            trustedProfile: profile.trustedProfile,
+            initials: profile.initials,
+            isDemoProfile: true,
+            demoVisible: false,
+            demoVisibleFrom: null,
+            demoVisibleUntil: null,
+            demoCreatedBy: admin.id,
+            demoLabel: profile.demoLabel,
+            demoClientReference: profile.demoClientReference,
+            demoInternalNotes: profile.demoInternalNotes,
+          },
+          include: { user: true },
+        });
+      });
+      await appendAdminAudit({
+        actorUserId: admin.id,
+        action: "demo.profile.cloned",
+        entityType: "MemberProfile",
+        entityId: cloned.id,
+        metadata: {
+          sourceProfileId: profile.id,
+          sourceMangalsaathId: mangalsaathIdForProfile(profile),
+          clonedMangalsaathId: mangalsaathIdForProfile(cloned),
+          defaultVisibility: "hidden",
+        },
+        request,
+      });
+      return NextResponse.json({
+        message: `AI profile cloned as ${mangalsaathIdForProfile(cloned)} and kept hidden for review.`,
+        profile: serialize(cloned),
+      }, { status: 201 });
     }
 
     if (action === "show") {

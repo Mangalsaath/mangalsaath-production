@@ -145,6 +145,8 @@ export async function POST(request) {
       partnerMaritalStatus: optionalText(body.partnerMaritalStatus, 100),
       partnerEducation: optionalText(body.partnerEducation, 180),
       partnerProfession: optionalText(body.partnerProfession, 180),
+      demoClientReference: optionalText(body.demoClientReference, 120),
+      demoInternalNotes: optionalText(body.demoInternalNotes, 4000),
     };
 
     const changedFields = Object.entries(profileData)

@@ -25,6 +25,7 @@ const emptyForm = {
   sistersMarried: "", sistersUnmarried: "", country: "India", state: "", city: "", about: "",
   partnerAgeMin: "", partnerAgeMax: "", partnerReligion: "", partnerCaste: "", partnerLocation: "",
   partnerMaritalStatus: "", partnerEducation: "", partnerProfession: "",
+  demoClientReference: "", demoInternalNotes: "",
 };
 
 function profileToForm(profile) {
@@ -62,6 +63,8 @@ function profileToForm(profile) {
     partnerMaritalStatus: profile.partnerMaritalStatus || "",
     partnerEducation: profile.partnerEducation || "",
     partnerProfession: profile.partnerProfession || "",
+    demoClientReference: profile.demoClientReference || "",
+    demoInternalNotes: profile.demoInternalNotes || "",
   };
 }
 
@@ -76,16 +79,17 @@ export default function EditAiProfilesPage() {
   const [pagination, setPagination] = useState({ page: 1, pages: 1, total: 0 });
   const [search, setSearch] = useState("");
   const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState("all");
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyForm);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [notice, setNotice] = useState("");
 
-  const load = useCallback(async (page = 1, q = query) => {
+  const load = useCallback(async (page = 1, q = query, status = statusFilter) => {
     setError("");
     try {
-      const data = await api(`/api/admin/demo-profiles?page=${page}&pageSize=50&search=${encodeURIComponent(q)}`);
+      const data = await api(`/api/admin/demo-profiles?page=${page}&pageSize=50&search=${encodeURIComponent(q)}&status=${encodeURIComponent(status)}`);
       setProfiles(data.profiles || []);
       setPagination(data.pagination || { page: 1, pages: 1, total: 0 });
       return data;
@@ -93,7 +97,7 @@ export default function EditAiProfilesPage() {
       setError(err.message);
       return null;
     }
-  }, [query]);
+  }, [query, statusFilter]);
 
   function startEdit(profile) {
     setEditing(profile);
@@ -166,6 +170,39 @@ export default function EditAiProfilesPage() {
     }
   }
 
+  async function profileAction(profile, action) {
+    const destructive = action === "delete";
+    const cloning = action === "clone";
+    if (destructive && !window.confirm(`Delete ${profile.mangalsaathId} permanently? This cannot be undone.`)) return;
+    if (cloning && !window.confirm(`Clone ${profile.mangalsaathId}? The new profile will be created Hidden for review.`)) return;
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      const result = await api("/api/admin/demo-profiles", {
+        method: "POST",
+        body: JSON.stringify({ action, profileId: profile.id }),
+      });
+      setNotice(result.message || "AI profile updated.");
+      if (action === "delete") {
+        setProfiles((current) => current.filter((item) => item.id !== profile.id));
+        if (editing?.id === profile.id) setEditing(null);
+      } else if (action === "clone") {
+        await load(1, query, statusFilter);
+      } else if (result.profile) {
+        setProfiles((current) => current.map((item) => item.id === result.profile.id ? result.profile : item));
+        if (editing?.id === result.profile.id) {
+          setEditing(result.profile);
+          setForm(profileToForm(result.profile));
+        }
+      }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function runSearch(e) {
     e.preventDefault();
     const q = search.trim();
@@ -183,8 +220,8 @@ export default function EditAiProfilesPage() {
       <header style={s.header}>
         <div>
           <small style={s.eyebrow}>SUPER ADMIN ONLY</small>
-          <h1 style={s.h1}>Edit AI Profiles</h1>
-          <p style={s.muted}>Enter a Mangal ID or browse AI profiles, then amend profile details. Mangal ID and AI visibility are preserved automatically.</p>
+          <h1 style={s.h1}>AI Profile Management</h1>
+          <p style={s.muted}>Super Admin control for AI profiles: edit, enable/disable, clone, manage client references, internal notes and photos.</p>
         </div>
         <div style={s.headerActions}>
           <a href="/admin-demo/gallery" style={s.link}>AI Gallery</a>
@@ -196,11 +233,27 @@ export default function EditAiProfilesPage() {
       {notice && <div style={s.success}>{notice}</div>}
 
       <section style={s.lookupBox}>
-        <b>Find AI profile by Mangal ID</b>
+        <b>Find / filter AI profiles</b>
         <form onSubmit={runSearch} style={s.searchRow}>
           <input style={s.search} placeholder="MANGAL1001" value={search} onChange={(e) => setSearch(e.target.value.toUpperCase())} />
           <button style={s.primary} type="submit" disabled={busy}>{busy ? "Please wait..." : "Find / Search"}</button>
-          {query && <button type="button" style={s.secondary} onClick={async () => { setSearch(""); setQuery(""); setEditing(null); await load(1, ""); }}>Clear</button>}
+          <select style={s.select} value={statusFilter} onChange={async (e) => {
+            const next = e.target.value;
+            setStatusFilter(next);
+            setEditing(null);
+            await load(1, query, next);
+          }}>
+            <option value="all">All profiles</option>
+            <option value="enabled">Enabled only</option>
+            <option value="hidden">Hidden only</option>
+          </select>
+          {(query || statusFilter !== "all") && <button type="button" style={s.secondary} onClick={async () => {
+            setSearch("");
+            setQuery("");
+            setStatusFilter("all");
+            setEditing(null);
+            await load(1, "", "all");
+          }}>Clear</button>}
         </form>
       </section>
 
@@ -214,6 +267,14 @@ export default function EditAiProfilesPage() {
             </div>
             <button style={s.secondary} onClick={() => setEditing(null)} disabled={busy}>Close</button>
           </div>
+
+          <h3 style={s.h3}>Client / internal control</h3>
+          <div style={s.grid}>
+            <Field label="Client reference" value={form.demoClientReference} set={(v) => setField("demoClientReference", v)} />
+          </div>
+          <label style={s.label}>Internal notes — Super Admin only
+            <textarea style={{ ...s.input, minHeight: 90 }} value={form.demoInternalNotes} onChange={(e) => setField("demoInternalNotes", e.target.value)} />
+          </label>
 
           <h3 style={s.h3}>Personal details</h3>
           <div style={s.grid}>
@@ -268,7 +329,12 @@ export default function EditAiProfilesPage() {
 
           <div style={s.actions}>
             <button style={s.primary} onClick={save} disabled={busy}>{busy ? "Saving..." : "Save AI Profile"}</button>
+            <button style={editing.demoVisible ? s.warningButton : s.enableButton} onClick={() => profileAction(editing, editing.demoVisible ? "hide" : "show")} disabled={busy}>
+              {editing.demoVisible ? "Disable Profile" : "Enable Profile"}
+            </button>
+            <button style={s.secondary} onClick={() => profileAction(editing, "clone")} disabled={busy}>Clone Profile</button>
             <a href="/admin-demo/gallery" style={s.secondaryLink}>Manage Photos</a>
+            <button style={s.dangerButton} onClick={() => profileAction(editing, "delete")} disabled={busy}>Delete</button>
             <button style={s.secondary} onClick={() => setEditing(null)} disabled={busy}>Close</button>
           </div>
         </section>
@@ -286,18 +352,26 @@ export default function EditAiProfilesPage() {
         <div style={s.tableWrap}>
           <table style={s.table}>
             <thead>
-              <tr><th style={s.th}>Mangal ID / Profile</th><th style={s.th}>Religion / Community</th><th style={s.th}>Education / Profession</th><th style={s.th}>Location</th><th style={s.th}>Income</th><th style={s.th}>Status</th><th style={s.th}>Action</th></tr>
+              <tr><th style={s.th}>Mangal ID / Profile</th><th style={s.th}>Client</th><th style={s.th}>Religion / Community</th><th style={s.th}>Education / Profession</th><th style={s.th}>Location</th><th style={s.th}>Status</th><th style={s.th}>Actions</th></tr>
             </thead>
             <tbody>
               {profiles.map((profile) => (
                 <tr key={profile.id}>
-                  <td style={s.td}><b style={s.memberId}>{profile.mangalsaathId || "—"}</b><br /><b>{profile.name}</b><br /><small>{profile.gender || "—"}, {profile.age || "—"} yrs</small></td>
+                  <td style={s.td}><b style={s.memberId}>{profile.mangalsaathId || "—"}</b><br /><b>{profile.name}</b><br /><small>{profile.gender || "—"}, {profile.age || "—"} yrs · {profile.annualCtc || "Income —"}</small></td>
+                  <td style={s.td}>{profile.demoClientReference || "—"}<br /><small>{profile.demoInternalNotes ? "Internal note saved" : "No internal note"}</small></td>
                   <td style={s.td}>{profile.religion || "—"}<br /><small>{profile.caste || "—"}{profile.subCaste ? ` / ${profile.subCaste}` : ""}</small></td>
                   <td style={s.td}>{profile.education || "—"}<br /><small>{profile.profession || "—"}</small></td>
                   <td style={s.td}>{profile.city || "—"}, {profile.state || "—"}</td>
-                  <td style={s.td}>{profile.annualCtc || "—"}</td>
                   <td style={s.td}><span style={profile.demoVisible ? s.badgeOn : s.badgeOff}>{profile.demoVisible ? "Enabled" : "Hidden"}</span></td>
-                  <td style={s.td}><button style={s.editButton} onClick={() => startEdit(profile)}>Edit</button></td>
+                  <td style={s.td}>
+                    <div style={s.rowActions}>
+                      <button style={s.editButton} onClick={() => startEdit(profile)} disabled={busy}>Edit</button>
+                      <button style={profile.demoVisible ? s.smallWarning : s.smallEnable} onClick={() => profileAction(profile, profile.demoVisible ? "hide" : "show")} disabled={busy}>{profile.demoVisible ? "Disable" : "Enable"}</button>
+                      <button style={s.smallButton} onClick={() => profileAction(profile, "clone")} disabled={busy}>Clone</button>
+                      <a href="/admin-demo/gallery" style={s.smallLink}>Photos</a>
+                      <button style={s.smallDanger} onClick={() => profileAction(profile, "delete")} disabled={busy}>Delete</button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -340,7 +414,18 @@ const s = {
   error: { padding: 13, borderRadius: 10, background: "#fdeaea", color: "#8a1f2d", marginBottom: 14 }, success: { padding: 13, borderRadius: 10, background: "#e8f6ef", color: "#26704f", marginBottom: 14 },
   photoNote: { marginTop: 16, padding: 12, borderRadius: 10, background: "#faf6f7", color: "#5c4b51" },
   searchRow: { display: "flex", flexWrap: "wrap", gap: 9, marginTop: 10 }, search: { flex: "1 1 420px", padding: 11, border: "1px solid #cebfc4", borderRadius: 9 },
+  select: { padding: "10px 12px", border: "1px solid #cebfc4", borderRadius: 9, background: "#fff" },
   tableWrap: { overflowX: "auto" }, table: { width: "100%", borderCollapse: "collapse", minWidth: 1120 }, th: { textAlign: "left", padding: 10, borderBottom: "1px solid #eadde1", color: "#776a6e", fontSize: 13 }, td: { padding: 11, borderBottom: "1px solid #f0e5e8", verticalAlign: "top" },
   badgeOn: { display: "inline-block", padding: "5px 8px", borderRadius: 999, background: "#e8f6ef", color: "#26704f", fontSize: 12, fontWeight: 700 }, badgeOff: { display: "inline-block", padding: "5px 8px", borderRadius: 999, background: "#f5edf0", color: "#6f5c62", fontSize: 12, fontWeight: 700 },
-  editButton: { border: "1px solid #741f39", borderRadius: 7, padding: "7px 11px", background: "#fff", color: "#741f39", fontWeight: 700, cursor: "pointer" }, pagination: { display: "flex", justifyContent: "center", alignItems: "center", gap: 14, marginTop: 18 },
+  editButton: { border: "1px solid #741f39", borderRadius: 7, padding: "7px 11px", background: "#fff", color: "#741f39", fontWeight: 700, cursor: "pointer" },
+  enableButton: { border: 0, borderRadius: 9, padding: "10px 14px", background: "#26704f", color: "#fff", fontWeight: 700, cursor: "pointer" },
+  warningButton: { border: 0, borderRadius: 9, padding: "10px 14px", background: "#9a6416", color: "#fff", fontWeight: 700, cursor: "pointer" },
+  dangerButton: { border: 0, borderRadius: 9, padding: "10px 14px", background: "#a42d3f", color: "#fff", fontWeight: 700, cursor: "pointer" },
+  rowActions: { display: "flex", flexWrap: "wrap", gap: 6 },
+  smallButton: { border: "1px solid #8a777d", borderRadius: 7, padding: "6px 8px", background: "#fff", color: "#493b40", fontWeight: 700, cursor: "pointer", fontSize: 12 },
+  smallEnable: { border: "1px solid #26704f", borderRadius: 7, padding: "6px 8px", background: "#e8f6ef", color: "#26704f", fontWeight: 700, cursor: "pointer", fontSize: 12 },
+  smallWarning: { border: "1px solid #9a6416", borderRadius: 7, padding: "6px 8px", background: "#fff8e9", color: "#80500f", fontWeight: 700, cursor: "pointer", fontSize: 12 },
+  smallDanger: { border: "1px solid #a42d3f", borderRadius: 7, padding: "6px 8px", background: "#fff", color: "#a42d3f", fontWeight: 700, cursor: "pointer", fontSize: 12 },
+  smallLink: { border: "1px solid #741f39", borderRadius: 7, padding: "6px 8px", background: "#fff", color: "#741f39", fontWeight: 700, textDecoration: "none", fontSize: 12 },
+  pagination: { display: "flex", justifyContent: "center", alignItems: "center", gap: 14, marginTop: 18 },
 };

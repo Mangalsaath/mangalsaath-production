@@ -2,28 +2,38 @@ import { PrismaClient } from "@prisma/client";
 
 const prisma = new PrismaClient();
 
+async function columnExists(databaseName, columnName) {
+  const rows = await prisma.$queryRawUnsafe(
+    "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'member_profiles' AND COLUMN_NAME = ? LIMIT 1",
+    databaseName,
+    columnName,
+  );
+  return rows.length > 0;
+}
+
+async function addColumnIfMissing(databaseName, columnName, definition) {
+  if (await columnExists(databaseName, columnName)) {
+    console.log(`[Profile schema] ${columnName} already exists.`);
+    return;
+  }
+  console.log(`[Profile schema] Adding ${columnName}...`);
+  await prisma.$executeRawUnsafe(`ALTER TABLE member_profiles ADD COLUMN ${columnName} ${definition}`);
+  console.log(`[Profile schema] ${columnName} added successfully.`);
+}
+
 async function main() {
   const databaseRows = await prisma.$queryRawUnsafe("SELECT DATABASE() AS db");
   const databaseName = databaseRows?.[0]?.db;
   if (!databaseName) throw new Error("Unable to determine active database.");
 
-  const columns = await prisma.$queryRawUnsafe(
-    "SELECT COLUMN_NAME FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = 'member_profiles' AND COLUMN_NAME = 'mangalNumber' LIMIT 1",
-    databaseName,
-  );
-
-  if (!columns.length) {
-    console.log("[Mangal ID] Adding nullable mangalNumber column for existing profile rows...");
-    await prisma.$executeRawUnsafe("ALTER TABLE member_profiles ADD COLUMN mangalNumber INT NULL");
-    console.log("[Mangal ID] Nullable mangalNumber column added successfully.");
-  } else {
-    console.log("[Mangal ID] mangalNumber column already exists; no schema preparation needed.");
-  }
+  await addColumnIfMissing(databaseName, "mangalNumber", "INT NULL");
+  await addColumnIfMissing(databaseName, "demoClientReference", "VARCHAR(120) NULL");
+  await addColumnIfMissing(databaseName, "demoInternalNotes", "TEXT NULL");
 }
 
 main()
   .catch((error) => {
-    console.error("[Mangal ID] Safe column preparation failed:", error);
+    console.error("[Profile schema] Safe column preparation failed:", error);
     process.exitCode = 1;
   })
   .finally(async () => {
