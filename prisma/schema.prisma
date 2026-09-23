@@ -126,6 +126,8 @@ model MemberProfile {
   demoVisibleUntil      DateTime?
   demoCreatedBy         String?   @db.VarChar(64)
   demoLabel             String?   @db.VarChar(80)
+  demoClientReference   String?   @db.VarChar(120)
+  demoInternalNotes     String?   @db.Text
   createdAt             DateTime  @default(now())
   updatedAt             DateTime  @updatedAt
 
