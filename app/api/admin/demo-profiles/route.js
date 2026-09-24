@@ -273,6 +273,17 @@ export async function POST(request) {
         },
       });
 
+      if (enable) {
+        const control = await getDemoProfileControl();
+        await saveDemoProfileControl({
+          ...control,
+          enabled: true,
+          allowDiscovery: true,
+          allowInterests: true,
+          allowMessages: true,
+        });
+      }
+
       await appendAdminAudit({
         actorUserId: admin.id,
         action: enable ? "demo.profile.bulk_shown" : "demo.profile.bulk_hidden",
@@ -497,6 +508,14 @@ export async function POST(request) {
       const updated = await prisma.memberProfile.update({
         where: { id: profile.id },
         data: { demoVisible: true, demoVisibleFrom: new Date(), demoVisibleUntil: null },
+      });
+      const control = await getDemoProfileControl();
+      await saveDemoProfileControl({
+        ...control,
+        enabled: true,
+        allowDiscovery: true,
+        allowInterests: true,
+        allowMessages: true,
       });
       await appendAdminAudit({
         actorUserId: admin.id,
