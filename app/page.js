@@ -433,7 +433,8 @@ export default function Home() {
     [adminMemberSearch, setAdminMemberSearch] = useState(""),
     [adminMemberFilter, setAdminMemberFilter] = useState("pending"),
     [adminSelectedMember, setAdminSelectedMember] = useState(null),
-    [adminActionBusy, setAdminActionBusy] = useState("");
+    [adminActionBusy, setAdminActionBusy] = useState(""),
+    [profilePhotoViewer, setProfilePhotoViewer] = useState(false);
   const supportEmail = siteConfig?.supportEmail || "contact@mangalsaath.com";
   const featuredOffer = homepageData.primaryOffer || null;
   const featuredCoupon = featuredOffer?.couponCode
@@ -979,10 +980,17 @@ export default function Home() {
       setInterestBusy("");
     }
   }
-  function openProfile(p) {
+  async function openProfile(p) {
     setSelected(p);
+    setProfilePhotoViewer(false);
     setView("profileDetail");
     window.scrollTo(0, 0);
+    try {
+      const d = await api(`/api/profiles?id=${encodeURIComponent(p.id)}`);
+      if (d.profile) setSelected(d.profile);
+    } catch (error) {
+      setNotice(error.message || "Unable to load complete profile.");
+    }
   }
   function toggleShortlist(id) {
     setShortlisted((current) => {
@@ -3580,135 +3588,212 @@ export default function Home() {
         </section>
       )}
       {view === "profileDetail" && selected && (
-        <section className="page">
-          <button className="back" onClick={() => setView("profiles")}>
-            ← Back to profiles
-          </button>
-          <div className="detail">
-            <div className="detailHead">
-              <div className="avatar big">
+        <section className="page profileViewV2">
+          <div className="profileBreadcrumb">
+            <button onClick={() => setView("profiles")}>Search Profiles</button>
+            <span>›</span>
+            <b>Profile Details</b>
+          </div>
+
+          <div className="profileHeroV2">
+            <div className="profilePhotoPanel">
+              <div className="profileMainPhoto">
                 {selected.primaryPhotoData ? (
-                  <img src={selected.primaryPhotoData} alt={selected.name} />
+                  <img src={selected.primaryPhotoData} alt={selected.profileName || selected.name} />
                 ) : (
-                  selected.initials
+                  <span>{selected.initials}</span>
+                )}
+                {selected.primaryPhotoData && <small className="photoVerifiedPill">✓ Profile photo</small>}
+                {(selected.photoCount > 1 || selected.photos?.length > 1) && (
+                  <button className="viewAllPhotosButton" onClick={() => setProfilePhotoViewer(true)}>
+                    ▣ View all photos ({selected.photoCount || selected.photos?.length})
+                  </button>
                 )}
               </div>
-              <div>
-                <div className="titleRow">
-                  <h2>{selected.name}</h2>
-                  {selected.verified && (
-                    <span className="badge">✓ Verified</span>
-                  )}
+            </div>
+
+            <div className="profileHeroInfo">
+              <div className="profileNameRow">
+                <div>
+                  <h1>{selected.profileName || selected.name}</h1>
+                  <div className="profileIdentityLine">
+                    {selected.mangalsaathId && <b>{selected.mangalsaathId}</b>}
+                    {selected.updatedAt && <span>◷ Last active: recently</span>}
+                  </div>
                 </div>
-                <p>
-                  {selected.age} yrs • {displayHeight(selected.height)} •{" "}
-                  {selected.city}, {selected.state}
-                </p>
-                <p>
-                  {selected.education} • {selected.profession}
-                </p>
+                {(selected.verified || selected.trustedProfile) && (
+                  <span className="verifiedProfileBadge">✓ Verified Profile</span>
+                )}
+              </div>
+
+              {selected.about && <p className="profileIntro">{selected.about}</p>}
+
+              <div className="profileQuickFacts">
+                <span>▣ <b>{selected.age || "—"} Years</b></span>
+                <span>↕ <b>{displayHeight(selected.height)}</b></span>
+                <span>◉ <b>{selected.religion || "—"}</b></span>
+                <span>♡ <b>{selected.maritalStatus || "—"}</b></span>
+                <span>⌖ <b>{[selected.city, selected.state].filter(Boolean).join(", ") || "—"}</b></span>
+                <span>♙ <b>{selected.caste || "—"}</b></span>
+                <span>▣ <b>{selected.profession || "—"}</b></span>
+                <span>⌂ <b>{selected.education || "—"}</b></span>
               </div>
             </div>
-            <div className="detailGrid">
-              <div>
-                <h3>Essential details</h3>
-                <dl>
-                  <dt>Marital status</dt>
-                  <dd>{selected.maritalStatus}</dd>
-                  <dt>Religion</dt>
-                  <dd>{selected.religion}</dd>
-                  <dt>Caste</dt>
-                  <dd>{selected.caste}</dd>
-                  {selected.subCaste && (
-                    <>
-                      <dt>Sub-caste</dt>
-                      <dd>{selected.subCaste}</dd>
-                    </>
-                  )}
-                  {selected.gotra && (
-                    <>
-                      <dt>Gotra</dt>
-                      <dd>{selected.gotra}</dd>
-                    </>
-                  )}
-                  <dt>Location</dt>
-                  <dd>
-                    {selected.city}, {selected.state}, {selected.country}
-                  </dd>
-                  {selected.annualCtc && (
-                    <>
-                      <dt>Annual CTC / income</dt>
-                      <dd>{selected.annualCtc}</dd>
-                    </>
-                  )}
-                  <dt>Siblings</dt>
-                  <dd>
-                    Brothers: {selected.brothersMarried || 0} married, {" "}
-                    {selected.brothersUnmarried || 0} unmarried
-                    <br />
-                    Sisters: {selected.sistersMarried || 0} married, {" "}
-                    {selected.sistersUnmarried || 0} unmarried
-                  </dd>
-                </dl>
+
+            <aside className="profileCompatibilityCard">
+              <h3>Profile Compatibility</h3>
+              <div
+                className="compatibilityRing"
+                style={{ "--score": selected.matchScore || matchScore(selected) }}
+              >
+                <strong>{selected.matchScore || matchScore(selected)}%</strong>
+                <span>Match</span>
               </div>
-              <div>
-                <h3>About</h3>
-                <p>{selected.about}</p>
-                <h3>Basic partner preference</h3>
-                <p>
-                  Age {selected.partnerAgeMin}–{selected.partnerAgeMax} •{" "}
-                  {selected.partnerReligion || "Open"} •{" "}
-                  {selected.partnerCaste || "Open"} •{" "}
-                  {selected.partnerLocation || "Open"}
-                </p>
-                <p className="preferenceExtra">
-                  Marital status: {selected.partnerMaritalStatus || "Open"} •
-                  Education: {selected.partnerEducation || "Open"} • Profession:{" "}
-                  {selected.partnerProfession || "Open"}
-                </p>
-              </div>
-            </div>
-            {selected.photos?.length > 1 && (
-              <div className="gallery">
-                <h3>Photos</h3>
-                <div className="galleryGrid">
-                  {selected.photos.map((ph, i) => (
-                    <img
-                      key={ph.id}
-                      src={ph.data}
-                      alt={`${selected.name} photo ${i + 1}`}
-                    />
-                  ))}
-                </div>
-              </div>
-            )}
-            <div className="actions">
-              {interestButton(selected)}
+              <p>Compatibility is based on available profile preferences and shared details.</p>
+              {(selected.matchReasons || []).slice(0, 3).map((reason) => (
+                <small key={reason}>✓ {reason}</small>
+              ))}
+            </aside>
+
+            <aside className="profileActionPanel">
+              <div className="profilePrimaryAction">{interestButton(selected)}</div>
+              {shortlistButton(selected)}
               <button
                 className="secondary"
                 disabled={selected.userId === user?.id}
                 onClick={() => startMessage(selected)}
               >
-                💬 Send message
+                ◯ Chat Request
+              </button>
+              <button className="profileLinkAction" onClick={() => navigator.clipboard?.writeText(window.location.href)}>
+                ⤴ Share Profile
               </button>
               {user && selected.userId !== user.id && (
                 <>
-                  <button
-                    className="secondary"
-                    onClick={() => safetyAction(selected, "report")}
-                  >
-                    ⚑ Report
-                  </button>
-                  <button
-                    className="dangerButton"
-                    onClick={() => safetyAction(selected, "block")}
-                  >
-                    Block member
-                  </button>
+                  <button className="profileLinkAction" onClick={() => safetyAction(selected, "report")}>⚑ Report Profile</button>
+                  <button className="profileLinkAction dangerText" onClick={() => safetyAction(selected, "block")}>⊘ Block Profile</button>
                 </>
               )}
-            </div>
+            </aside>
           </div>
+
+          <nav className="profileSectionNav" aria-label="Profile sections">
+            <a href="#profile-about">About</a>
+            <a href="#profile-personal">Personal Details</a>
+            <a href="#profile-career">Education & Career</a>
+            <a href="#profile-family">Family Details</a>
+            <a href="#profile-preferences">Partner Preferences</a>
+          </nav>
+
+          <div className="profileContentLayout">
+            <main className="profileContentMain">
+              <div className="profileTopCards">
+                <article id="profile-about" className="profileInfoCard">
+                  <h3>● About {String(selected.profileName || selected.name || "Profile").split(" ")[0]}</h3>
+                  <p>{selected.about || "This member has not added an introduction yet."}</p>
+                </article>
+                <article className="profileInfoCard profileHighlights">
+                  <h3>★ Key Highlights</h3>
+                  <div>
+                    {(selected.verified || selected.trustedProfile) && <span>✓ Verified Profile</span>}
+                    {selected.education && <span>⌂ {selected.education}</span>}
+                    {selected.profession && <span>▣ {selected.profession}</span>}
+                    {selected.maritalStatus && <span>♡ {selected.maritalStatus}</span>}
+                    {selected.city && <span>⌖ {selected.city}</span>}
+                  </div>
+                </article>
+              </div>
+
+              <article id="profile-personal" className="profileInfoCard profileDetailsCard">
+                <div className="profileCardHeading">
+                  <h3>● Personal Details</h3>
+                </div>
+                <dl className="profileDefinitionGrid">
+                  <dt>Age</dt><dd>{selected.age ? `${selected.age} Years` : "—"}</dd>
+                  <dt>Height</dt><dd>{displayHeight(selected.height)}</dd>
+                  <dt>Marital Status</dt><dd>{selected.maritalStatus || "—"}</dd>
+                  <dt>Religion</dt><dd>{selected.religion || "—"}</dd>
+                  <dt>Caste / Community</dt><dd>{selected.caste || "—"}</dd>
+                  <dt>Sub-caste</dt><dd>{selected.subCaste || "—"}</dd>
+                  <dt>Location</dt><dd>{[selected.city, selected.state, selected.country].filter(Boolean).join(", ") || "—"}</dd>
+                  <dt>Place of Birth</dt><dd>{selected.placeOfBirth || "—"}</dd>
+                  <dt>Time of Birth</dt><dd>{selected.timeOfBirth || "—"}</dd>
+                  <dt>Annual Income</dt><dd>{selected.annualCtc || "—"}</dd>
+                </dl>
+              </article>
+
+              <details id="profile-career" className="profileAccordion" open>
+                <summary><span>⌂ Education & Career</span><small>{[selected.education, selected.profession, selected.annualCtc].filter(Boolean).join("  |  ")}</small></summary>
+                <div className="profileAccordionBody">
+                  <dl>
+                    <dt>Education</dt><dd>{selected.education || "—"}</dd>
+                    <dt>Profession</dt><dd>{selected.profession || "—"}</dd>
+                    <dt>Annual CTC / Income</dt><dd>{selected.annualCtc || "—"}</dd>
+                  </dl>
+                </div>
+              </details>
+
+              <details id="profile-family" className="profileAccordion">
+                <summary><span>♟ Family Details</span><small>Sibling information</small></summary>
+                <div className="profileAccordionBody">
+                  <dl>
+                    <dt>Brothers</dt><dd>{selected.brothersMarried || 0} married, {selected.brothersUnmarried || 0} unmarried</dd>
+                    <dt>Sisters</dt><dd>{selected.sistersMarried || 0} married, {selected.sistersUnmarried || 0} unmarried</dd>
+                  </dl>
+                </div>
+              </details>
+
+              <details id="profile-preferences" className="profileAccordion">
+                <summary><span>♡ Partner Preferences</span><small>Age, community, location, education and profession</small></summary>
+                <div className="profileAccordionBody">
+                  <dl>
+                    <dt>Age Range</dt><dd>{selected.partnerAgeMin || "Open"} – {selected.partnerAgeMax || "Open"}</dd>
+                    <dt>Religion</dt><dd>{selected.partnerReligion || "Open"}</dd>
+                    <dt>Caste / Community</dt><dd>{selected.partnerCaste || "Open"}</dd>
+                    <dt>Location</dt><dd>{selected.partnerLocation || "Open"}</dd>
+                    <dt>Marital Status</dt><dd>{selected.partnerMaritalStatus || "Open"}</dd>
+                    <dt>Education</dt><dd>{selected.partnerEducation || "Open"}</dd>
+                    <dt>Profession</dt><dd>{selected.partnerProfession || "Open"}</dd>
+                  </dl>
+                </div>
+              </details>
+            </main>
+
+            <aside className="profileSidebarV2">
+              <article className="profilePrivacyCard">
+                <h3>▣ Your Privacy is Our Priority</h3>
+                <p>✓ Contact details are hidden</p>
+                <p>✓ Your interest is shared privately</p>
+                <p>✓ Photos remain inside the profile experience</p>
+                <p>✓ Report suspicious profiles anytime</p>
+              </article>
+              <article className="profileMetaCard">
+                <p><span>Profile Created</span><b>{selected.createdAt ? new Date(selected.createdAt).toLocaleDateString("en-IN") : "—"}</b></p>
+                <p><span>Last Updated</span><b>{selected.updatedAt ? new Date(selected.updatedAt).toLocaleDateString("en-IN") : "—"}</b></p>
+                <p><span>Profile Completion</span><b>{selected.profileCompletion ?? "—"}%</b></p>
+              </article>
+            </aside>
+          </div>
+
+          {profilePhotoViewer && (
+            <div className="profilePhotoModal" role="dialog" aria-modal="true" aria-label="Profile photos">
+              <button className="photoModalClose" onClick={() => setProfilePhotoViewer(false)}>×</button>
+              <div className="profilePhotoModalCard">
+                <div className="photoModalHeading">
+                  <div>
+                    <small>PHOTO GALLERY</small>
+                    <h2>{selected.profileName || selected.name}</h2>
+                  </div>
+                  <button onClick={() => setProfilePhotoViewer(false)}>Close</button>
+                </div>
+                <div className="photoModalGrid">
+                  {(selected.photos || []).map((ph, i) => (
+                    <img key={ph.id || i} src={ph.data || ph.url} alt={`${selected.profileName || selected.name} photo ${i + 1}`} />
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
         </section>
       )}
       {view === "compose" && messageProfile && (
