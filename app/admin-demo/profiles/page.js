@@ -81,6 +81,7 @@ export default function EditAiProfilesPage() {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [editing, setEditing] = useState(null);
+  const [selectedIds, setSelectedIds] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -91,6 +92,7 @@ export default function EditAiProfilesPage() {
     try {
       const data = await api(`/api/admin/demo-profiles?page=${page}&pageSize=50&search=${encodeURIComponent(q)}&status=${encodeURIComponent(status)}`);
       setProfiles(data.profiles || []);
+      setSelectedIds([]);
       setPagination(data.pagination || { page: 1, pages: 1, total: 0 });
       return data;
     } catch (err) {
@@ -196,6 +198,62 @@ export default function EditAiProfilesPage() {
           setForm(profileToForm(result.profile));
         }
       }
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function toggleSelected(profileId) {
+    setSelectedIds((current) =>
+      current.includes(profileId)
+        ? current.filter((id) => id !== profileId)
+        : [...current, profileId],
+    );
+  }
+
+  function toggleAllVisible() {
+    const visibleIds = profiles.map((profile) => profile.id);
+    const allSelected = visibleIds.length > 0 && visibleIds.every((id) => selectedIds.includes(id));
+    setSelectedIds(allSelected ? [] : visibleIds);
+  }
+
+  async function bulkVisibility(enable) {
+    if (!selectedIds.length) {
+      setError("Select at least one AI profile.");
+      return;
+    }
+    const actionLabel = enable ? "enable" : "disable";
+    if (!window.confirm(`${actionLabel === "enable" ? "Enable" : "Disable"} ${selectedIds.length} selected AI profile(s)?`)) return;
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      const result = await api("/api/admin/demo-profiles", {
+        method: "POST",
+        body: JSON.stringify({
+          action: enable ? "bulk-show" : "bulk-hide",
+          profileIds: selectedIds,
+        }),
+      });
+      setProfiles((current) =>
+        current.map((profile) =>
+          selectedIds.includes(profile.id)
+            ? {
+                ...profile,
+                demoVisible: enable,
+                demoVisibleFrom: enable ? new Date().toISOString() : null,
+                demoVisibleUntil: null,
+              }
+            : profile,
+        ),
+      );
+      if (editing && selectedIds.includes(editing.id)) {
+        setEditing((current) => current ? { ...current, demoVisible: enable } : current);
+      }
+      setNotice(result.message || `Selected AI profiles ${enable ? "enabled" : "disabled"}.`);
+      setSelectedIds([]);
     } catch (err) {
       setError(err.message);
     } finally {
@@ -349,14 +407,45 @@ export default function EditAiProfilesPage() {
           <button style={s.secondary} onClick={() => isMangalId(query) ? loadByMangalId(query, false) : load(pagination.page, query)} disabled={busy}>Refresh</button>
         </div>
 
+        <div style={s.bulkBar}>
+          <label style={s.bulkSelectLabel}>
+            <input
+              type="checkbox"
+              checked={profiles.length > 0 && profiles.every((profile) => selectedIds.includes(profile.id))}
+              onChange={toggleAllVisible}
+              disabled={busy || !profiles.length}
+            />
+            Select all visible
+          </label>
+          <b>{selectedIds.length} selected</b>
+          <button style={s.enableButton} onClick={() => bulkVisibility(true)} disabled={busy || !selectedIds.length}>
+            Enable Selected
+          </button>
+          <button style={s.warningButton} onClick={() => bulkVisibility(false)} disabled={busy || !selectedIds.length}>
+            Disable Selected
+          </button>
+          {selectedIds.length > 0 && (
+            <button style={s.secondary} onClick={() => setSelectedIds([])} disabled={busy}>Clear Selection</button>
+          )}
+        </div>
+
         <div style={s.tableWrap}>
           <table style={s.table}>
             <thead>
-              <tr><th style={s.th}>Mangal ID / Profile</th><th style={s.th}>Client</th><th style={s.th}>Religion / Community</th><th style={s.th}>Education / Profession</th><th style={s.th}>Location</th><th style={s.th}>Status</th><th style={s.th}>Actions</th></tr>
+              <tr><th style={s.th}>Select</th><th style={s.th}>Mangal ID / Profile</th><th style={s.th}>Client</th><th style={s.th}>Religion / Community</th><th style={s.th}>Education / Profession</th><th style={s.th}>Location</th><th style={s.th}>Status</th><th style={s.th}>Actions</th></tr>
             </thead>
             <tbody>
               {profiles.map((profile) => (
                 <tr key={profile.id}>
+                  <td style={s.td}>
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.includes(profile.id)}
+                      onChange={() => toggleSelected(profile.id)}
+                      disabled={busy}
+                      aria-label={`Select ${profile.mangalsaathId || profile.name}`}
+                    />
+                  </td>
                   <td style={s.td}><b style={s.memberId}>{profile.mangalsaathId || "—"}</b><br /><b>{profile.name}</b><br /><small>{profile.gender || "—"}, {profile.age || "—"} yrs · {profile.annualCtc || "Income —"}</small></td>
                   <td style={s.td}>{profile.demoClientReference || "—"}<br /><small>{profile.demoInternalNotes ? "Internal note saved" : "No internal note"}</small></td>
                   <td style={s.td}>{profile.religion || "—"}<br /><small>{profile.caste || "—"}{profile.subCaste ? ` / ${profile.subCaste}` : ""}</small></td>
@@ -415,7 +504,9 @@ const s = {
   photoNote: { marginTop: 16, padding: 12, borderRadius: 10, background: "#faf6f7", color: "#5c4b51" },
   searchRow: { display: "flex", flexWrap: "wrap", gap: 9, marginTop: 10 }, search: { flex: "1 1 420px", padding: 11, border: "1px solid #cebfc4", borderRadius: 9 },
   select: { padding: "10px 12px", border: "1px solid #cebfc4", borderRadius: 9, background: "#fff" },
-  tableWrap: { overflowX: "auto" }, table: { width: "100%", borderCollapse: "collapse", minWidth: 1120 }, th: { textAlign: "left", padding: 10, borderBottom: "1px solid #eadde1", color: "#776a6e", fontSize: 13 }, td: { padding: 11, borderBottom: "1px solid #f0e5e8", verticalAlign: "top" },
+  bulkBar: { display: "flex", flexWrap: "wrap", alignItems: "center", gap: 10, padding: 12, marginBottom: 14, border: "1px solid #e5d4da", borderRadius: 10, background: "#fff8fb" },
+  bulkSelectLabel: { display: "flex", alignItems: "center", gap: 7, fontWeight: 700 },
+  tableWrap: { overflowX: "auto" }, table: { width: "100%", borderCollapse: "collapse", minWidth: 1180 }, th: { textAlign: "left", padding: 10, borderBottom: "1px solid #eadde1", color: "#776a6e", fontSize: 13 }, td: { padding: 11, borderBottom: "1px solid #f0e5e8", verticalAlign: "top" },
   badgeOn: { display: "inline-block", padding: "5px 8px", borderRadius: 999, background: "#e8f6ef", color: "#26704f", fontSize: 12, fontWeight: 700 }, badgeOff: { display: "inline-block", padding: "5px 8px", borderRadius: 999, background: "#f5edf0", color: "#6f5c62", fontSize: 12, fontWeight: 700 },
   editButton: { border: "1px solid #741f39", borderRadius: 7, padding: "7px 11px", background: "#fff", color: "#741f39", fontWeight: 700, cursor: "pointer" },
   enableButton: { border: 0, borderRadius: 9, padding: "10px 14px", background: "#26704f", color: "#fff", fontWeight: 700, cursor: "pointer" },
