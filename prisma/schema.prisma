@@ -94,6 +94,17 @@ model MemberProfile {
   education             String?   @db.VarChar(180)
   profession            String?   @db.VarChar(180)
   annualCtc             String?   @db.VarChar(100)
+  fatherName            String?   @db.VarChar(180)
+  fatherStatus          String?   @db.VarChar(60)
+  fatherOccupation      String?   @db.VarChar(180)
+  motherName            String?   @db.VarChar(180)
+  motherStatus          String?   @db.VarChar(60)
+  motherOccupation      String?   @db.VarChar(180)
+  familyType            String?   @db.VarChar(80)
+  familyLocation        String?   @db.VarChar(180)
+  familyValues          String?   @db.VarChar(120)
+  brothersDetails       String?   @db.Text
+  sistersDetails        String?   @db.Text
   brothersMarried       Int       @default(0)
   brothersUnmarried     Int       @default(0)
   sistersMarried        Int       @default(0)
