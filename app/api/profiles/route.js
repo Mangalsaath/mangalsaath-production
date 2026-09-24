@@ -265,7 +265,12 @@ export async function PUT(request) {
       profile: {
         name, gender: nullable(body.gender), dateOfBirth: new Date(body.dateOfBirth), placeOfBirth: nullable(body.placeOfBirth), timeOfBirth: nullable(body.timeOfBirth), age, maritalStatus: nullable(body.maritalStatus), height,
         religion: nullable(body.religion), caste: nullable(body.caste), subCaste: nullable(body.subCaste), gotra: nullable(body.gotra), education: nullable(body.education),
-        profession: nullable(body.profession), annualCtc: nullable(body.annualCtc), ...siblingCounts, country: nullable(body.country), state: nullable(body.state), city: nullable(body.city), about: nullable(body.about),
+        profession: nullable(body.profession), annualCtc: nullable(body.annualCtc),
+        fatherName: nullable(body.fatherName), fatherStatus: nullable(body.fatherStatus), fatherOccupation: nullable(body.fatherOccupation),
+        motherName: nullable(body.motherName), motherStatus: nullable(body.motherStatus), motherOccupation: nullable(body.motherOccupation),
+        familyType: nullable(body.familyType), familyLocation: nullable(body.familyLocation), familyValues: nullable(body.familyValues),
+        brothersDetails: nullable(body.brothersDetails), sistersDetails: nullable(body.sistersDetails),
+        ...siblingCounts, country: nullable(body.country), state: nullable(body.state), city: nullable(body.city), about: nullable(body.about),
         partnerAgeMin, partnerAgeMax, partnerReligion: nullable(body.partnerReligion), partnerCaste: nullable(body.partnerCaste), partnerLocation: nullable(body.partnerLocation),
         partnerMaritalStatus: nullable(body.partnerMaritalStatus), partnerEducation: nullable(body.partnerEducation), partnerProfession: nullable(body.partnerProfession),
         photos, primaryPhoto, initials: name.split(/\s+/).slice(0, 2).map((part) => part[0] || "").join("").toUpperCase(),
@@ -296,7 +301,7 @@ export async function PUT(request) {
   if (siblingFields.some((key) => !Number.isInteger(Number(body[key])) || Number(body[key]) < 0 || Number(body[key]) > 20)) return NextResponse.json({ error: "Please enter each sibling count as a whole number from 0 to 20." }, { status: 400 });
   body.name = `${String(body.firstName || "").trim()} ${String(body.lastName || "").trim()}`.trim();
 
-  const allowed = ["name", "firstName", "lastName", "gender", "dateOfBirth", "placeOfBirth", "timeOfBirth", "maritalStatus", "height", "religion", "caste", "subCaste", "gotra", "education", "profession", "annualCtc", "brothersMarried", "brothersUnmarried", "sistersMarried", "sistersUnmarried", "country", "state", "city", "about", "partnerAgeMin", "partnerAgeMax", "partnerReligion", "partnerCaste", "partnerLocation", "partnerMaritalStatus", "partnerEducation", "partnerProfession", "photos", "primaryPhoto"];
+  const allowed = ["name", "firstName", "lastName", "gender", "dateOfBirth", "placeOfBirth", "timeOfBirth", "maritalStatus", "height", "religion", "caste", "subCaste", "gotra", "education", "profession", "annualCtc", "fatherName", "fatherStatus", "fatherOccupation", "motherName", "motherStatus", "motherOccupation", "familyType", "familyLocation", "familyValues", "brothersDetails", "sistersDetails", "brothersMarried", "brothersUnmarried", "sistersMarried", "sistersUnmarried", "country", "state", "city", "about", "partnerAgeMin", "partnerAgeMax", "partnerReligion", "partnerCaste", "partnerLocation", "partnerMaritalStatus", "partnerEducation", "partnerProfession", "photos", "primaryPhoto"];
   const updated = { ...db.profiles[index] };
   for (const key of allowed) if (body[key] !== undefined) updated[key] = typeof body[key] === "string" ? body[key].trim() : body[key];
   for (const key of siblingFields) updated[key] = Number(updated[key]);
