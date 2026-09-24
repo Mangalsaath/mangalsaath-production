@@ -20,7 +20,6 @@ export async function GET(request) {
   const url = new URL(request.url);
   const id = url.searchParams.get("id");
   const mine = url.searchParams.get("mine") === "true";
-  const db = await readDb();
   const settings = await getSystemSettings();
   const currentUser = await getUser(request);
   const isAdmin = isAdminRole(currentUser?.role);
@@ -35,7 +34,8 @@ export async function GET(request) {
     if (relationalProfileEnabled()) {
       let found = await findProfileByUserId(currentUser.id);
       if (!found) {
-        const legacyProfile = (db.profiles || []).find((item) => String(item.userId) === String(currentUser.id)) || null;
+        const legacyDb = await readDb();
+        const legacyProfile = (legacyDb.profiles || []).find((item) => String(item.userId) === String(currentUser.id)) || null;
         found = await ensureRelationalProfile(currentUser.id, legacyProfile);
       }
       if (!found) return NextResponse.json({ error: "Your profile was not found." }, { status: 404 });
@@ -44,6 +44,7 @@ export async function GET(request) {
         { headers: { "Cache-Control": "private, no-store" } },
       );
     }
+    const db = await readDb();
     const profile = db.profiles.find((item) => item.userId === currentUser.id);
     if (!profile) return NextResponse.json({ error: "Your profile was not found." }, { status: 404 });
     return NextResponse.json(
@@ -57,7 +58,20 @@ export async function GET(request) {
       const found = await findProfileById(id);
       if (!found) return NextResponse.json({ error: "Profile not found." }, { status: 404 });
       const ownsProfile = currentUser?.id === found.user.id;
-      if (!ownsProfile && !isAdmin && (!isProfilePublishable(found.profile, found.user) || (currentUser && isBlockedBetween(db, currentUser.id, found.user.id)))) {
+      let blocked = false;
+      if (currentUser && !ownsProfile && !isAdmin) {
+        blocked = Boolean(await prisma.blockRecord.findFirst({
+          where: {
+            active: true,
+            OR: [
+              { blockerUserId: currentUser.id, blockedUserId: found.user.id },
+              { blockerUserId: found.user.id, blockedUserId: currentUser.id },
+            ],
+          },
+          select: { id: true },
+        }));
+      }
+      if (!ownsProfile && !isAdmin && (!isProfilePublishable(found.profile, found.user) || blocked)) {
         return NextResponse.json({ error: "Profile not found." }, { status: 404 });
       }
       return NextResponse.json({ profile: ownsProfile || isAdmin ? presentOwnerProfile(found.profile, found.user) : presentPublicProfile(found.profile, found.user, { detail: true }) }, { headers: { "Cache-Control": "no-store" } });
@@ -87,8 +101,19 @@ export async function GET(request) {
     const sort = url.searchParams.get("sort") || "match";
     const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
     const limit = Math.min(24, Math.max(1, Number(url.searchParams.get("limit")) || 6));
-    const blockedIds = currentUser ? [...blockedUserIdsFor(db, currentUser.id)] : [];
-    const excludedUserIds = [...blockedIds, ...(currentUser?.id ? [currentUser.id] : [])];
+    const blockRows = currentUser
+      ? await prisma.blockRecord.findMany({
+          where: {
+            active: true,
+            OR: [{ blockerUserId: currentUser.id }, { blockedUserId: currentUser.id }],
+          },
+          select: { blockerUserId: true, blockedUserId: true },
+        })
+      : [];
+    const blockedIds = currentUser
+      ? blockRows.map((row) => row.blockerUserId === currentUser.id ? row.blockedUserId : row.blockerUserId)
+      : [];
+    const excludedUserIds = [...new Set([...blockedIds, ...(currentUser?.id ? [currentUser.id] : [])])];
     const and = [];
     if (verified) and.push({ OR: [{ verified: true }, { trustedProfile: true }] });
     if (q) and.push({ OR: [
@@ -101,7 +126,14 @@ export async function GET(request) {
       ...(ageMin !== null || ageMax !== null ? { age: { ...(ageMin !== null ? { gte: ageMin } : {}), ...(ageMax !== null ? { lte: ageMax } : {}) } } : {}),
       ...(heightMin !== null || heightMax !== null ? { height: { ...(heightMin !== null ? { gte: heightMin } : {}), ...(heightMax !== null ? { lte: heightMax } : {}) } } : {}),
       OR: [
-        { isDemoProfile: true },
+        {
+          isDemoProfile: true,
+          demoVisible: true,
+          AND: [
+            { OR: [{ demoVisibleFrom: null }, { demoVisibleFrom: { lte: new Date() } }] },
+            { OR: [{ demoVisibleUntil: null }, { demoVisibleUntil: { gt: new Date() } }] },
+          ],
+        },
         { isDemoProfile: false, photoModerationStatus: "approved" },
       ],
       ...(city !== "Any" ? { city } : {}),
@@ -133,6 +165,8 @@ export async function GET(request) {
     };
     return NextResponse.json({ profiles, pagination: { page: safePage, pages, total, limit }, facets }, { headers: { "Cache-Control": "private, no-store" } });
   }
+
+  const db = await readDb();
 
   if (id) {
     const profile = db.profiles.find((item) => item.id === id);
