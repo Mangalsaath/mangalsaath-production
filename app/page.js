@@ -49,6 +49,17 @@ const blank = {
   education: "",
   profession: "",
   annualCtc: "",
+  fatherName: "",
+  fatherStatus: "",
+  fatherOccupation: "",
+  motherName: "",
+  motherStatus: "",
+  motherOccupation: "",
+  familyType: "",
+  familyLocation: "",
+  familyValues: "",
+  brothersDetails: "",
+  sistersDetails: "",
   brothersMarried: "",
   brothersUnmarried: "",
   sistersMarried: "",
@@ -81,6 +92,17 @@ const profileKeys = [
   "education",
   "profession",
   "annualCtc",
+  "fatherName",
+  "fatherStatus",
+  "fatherOccupation",
+  "motherName",
+  "motherStatus",
+  "motherOccupation",
+  "familyType",
+  "familyLocation",
+  "familyValues",
+  "brothersDetails",
+  "sistersDetails",
   "brothersMarried",
   "brothersUnmarried",
   "sistersMarried",
@@ -3733,12 +3755,46 @@ export default function Home() {
               </details>
 
               <details id="profile-family" className="profileAccordion">
-                <summary><span>♟ Family Details</span><small>Sibling information</small></summary>
-                <div className="profileAccordionBody">
-                  <dl>
-                    <dt>Brothers</dt><dd>{selected.brothersMarried || 0} married, {selected.brothersUnmarried || 0} unmarried</dd>
-                    <dt>Sisters</dt><dd>{selected.sistersMarried || 0} married, {selected.sistersUnmarried || 0} unmarried</dd>
-                  </dl>
+                <summary><span>♟ Family Details</span><small>Parents, family background, brothers and sisters</small></summary>
+                <div className="profileAccordionBody familyDetailBody">
+                  <div className="familyDetailGrid">
+                    <section>
+                      <h4>Father</h4>
+                      <dl>
+                        <dt>Name</dt><dd>{selected.fatherName || "Not provided"}</dd>
+                        <dt>Status</dt><dd>{selected.fatherStatus || "Not provided"}</dd>
+                        <dt>Occupation</dt><dd>{selected.fatherOccupation || "Not provided"}</dd>
+                      </dl>
+                    </section>
+                    <section>
+                      <h4>Mother</h4>
+                      <dl>
+                        <dt>Name</dt><dd>{selected.motherName || "Not provided"}</dd>
+                        <dt>Status</dt><dd>{selected.motherStatus || "Not provided"}</dd>
+                        <dt>Occupation</dt><dd>{selected.motherOccupation || "Not provided"}</dd>
+                      </dl>
+                    </section>
+                    <section>
+                      <h4>Family Background</h4>
+                      <dl>
+                        <dt>Family Type</dt><dd>{selected.familyType || "Not provided"}</dd>
+                        <dt>Family Location</dt><dd>{selected.familyLocation || "Not provided"}</dd>
+                        <dt>Family Values</dt><dd>{selected.familyValues || "Not provided"}</dd>
+                      </dl>
+                    </section>
+                  </div>
+                  <div className="siblingDetailCards">
+                    <section>
+                      <h4>Brothers</h4>
+                      <p className="siblingCount">{selected.brothersMarried || 0} married · {selected.brothersUnmarried || 0} unmarried</p>
+                      <p>{selected.brothersDetails || "Detailed information not provided."}</p>
+                    </section>
+                    <section>
+                      <h4>Sisters</h4>
+                      <p className="siblingCount">{selected.sistersMarried || 0} married · {selected.sistersUnmarried || 0} unmarried</p>
+                      <p>{selected.sistersDetails || "Detailed information not provided."}</p>
+                    </section>
+                  </div>
                 </div>
               </details>
 
@@ -4173,7 +4229,39 @@ export default function Home() {
                   {editSelect("state", "State / region", stateOptions)}
                   {editSelect("city", "City", cityOptions)}
                 </div>
-                <h3>Sibling details</h3>
+                <h3>Family details</h3>
+                <div className="grid2">
+                  {editField("fatherName", "Father's name", "text", false)}
+                  {editField("fatherStatus", "Father's status", "text", false)}
+                  {editField("fatherOccupation", "Father's occupation", "text", false)}
+                  {editField("motherName", "Mother's name", "text", false)}
+                  {editField("motherStatus", "Mother's status", "text", false)}
+                  {editField("motherOccupation", "Mother's occupation", "text", false)}
+                  {editField("familyType", "Family type", "text", false)}
+                  {editField("familyLocation", "Family location", "text", false)}
+                  {editField("familyValues", "Family values", "text", false)}
+                </div>
+                <label>
+                  Brothers details
+                  <textarea
+                    rows="3"
+                    maxLength="1500"
+                    value={edit.brothersDetails || ""}
+                    onChange={(e) => setEdit({ ...edit, brothersDetails: e.target.value })}
+                    placeholder="Names, age, marital status, education, profession and location, as applicable"
+                  />
+                </label>
+                <label>
+                  Sisters details
+                  <textarea
+                    rows="3"
+                    maxLength="1500"
+                    value={edit.sistersDetails || ""}
+                    onChange={(e) => setEdit({ ...edit, sistersDetails: e.target.value })}
+                    placeholder="Names, age, marital status, education, profession and location, as applicable"
+                  />
+                </label>
+                <h3>Sibling counts</h3>
                 <p className="fieldHint">
                   Enter the number in each category. Use 0 when there is none.
                 </p>
