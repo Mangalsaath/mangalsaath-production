@@ -3603,7 +3603,6 @@ export default function Home() {
                 ) : (
                   <span>{selected.initials}</span>
                 )}
-                {selected.primaryPhotoData && <small className="photoVerifiedPill">✓ Profile photo</small>}
                 {(selected.photoCount > 1 || selected.photos?.length > 1) && (
                   <button className="viewAllPhotosButton" onClick={() => setProfilePhotoViewer(true)}>
                     ▣ View all photos ({selected.photoCount || selected.photos?.length})
