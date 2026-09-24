@@ -73,11 +73,17 @@ export async function GET(request) {
     const gender = url.searchParams.get("gender") || "Any";
     const maritalStatus = url.searchParams.get("maritalStatus") || "Any";
     const verified = url.searchParams.get("verified") === "true";
-    const ageMin = Math.max(18, Number(url.searchParams.get("ageMin")) || 18);
-    const ageMax = Math.min(100, Number(url.searchParams.get("ageMax")) || 100);
-    const heightMin = Math.max(100, Number(url.searchParams.get("heightMin")) || 100);
-    const heightMax = Math.min(250, Number(url.searchParams.get("heightMax")) || 250);
-    if (ageMin > ageMax || heightMin > heightMax) return NextResponse.json({ error: "Invalid search range." }, { status: 400 });
+    const ageMinRaw = url.searchParams.get("ageMin");
+    const ageMaxRaw = url.searchParams.get("ageMax");
+    const heightMinRaw = url.searchParams.get("heightMin");
+    const heightMaxRaw = url.searchParams.get("heightMax");
+    const ageMin = ageMinRaw ? Math.max(18, Number(ageMinRaw) || 18) : null;
+    const ageMax = ageMaxRaw ? Math.min(100, Number(ageMaxRaw) || 100) : null;
+    const heightMin = heightMinRaw ? Math.max(100, Number(heightMinRaw) || 100) : null;
+    const heightMax = heightMaxRaw ? Math.min(250, Number(heightMaxRaw) || 250) : null;
+    if ((ageMin !== null && ageMax !== null && ageMin > ageMax) || (heightMin !== null && heightMax !== null && heightMin > heightMax)) {
+      return NextResponse.json({ error: "Invalid search range." }, { status: 400 });
+    }
     const sort = url.searchParams.get("sort") || "match";
     const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
     const limit = Math.min(24, Math.max(1, Number(url.searchParams.get("limit")) || 6));
@@ -92,8 +98,8 @@ export async function GET(request) {
     ] });
     const where = {
       user: { role: "member", status: "active", ...(excludedUserIds.length ? { id: { notIn: excludedUserIds } } : {}) },
-      age: { gte: ageMin, lte: ageMax },
-      height: { gte: heightMin, lte: heightMax },
+      ...(ageMin !== null || ageMax !== null ? { age: { ...(ageMin !== null ? { gte: ageMin } : {}), ...(ageMax !== null ? { lte: ageMax } : {}) } } : {}),
+      ...(heightMin !== null || heightMax !== null ? { height: { ...(heightMin !== null ? { gte: heightMin } : {}), ...(heightMax !== null ? { lte: heightMax } : {}) } } : {}),
       OR: [
         { isDemoProfile: true },
         { isDemoProfile: false, photoModerationStatus: "approved" },
