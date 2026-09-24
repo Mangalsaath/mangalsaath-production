@@ -634,12 +634,18 @@ export default function Home() {
     params.set("sort", filters.sort);
     params.set("page", String(targetPage));
     params.set("limit", "12");
-    const d = await api(`/api/profiles?${params}`);
-    setProfiles(d.profiles || []);
-    setPageInfo(
-      d.pagination || { page: 1, pages: 1, total: (d.profiles || []).length },
-    );
-    setPage(targetPage);
+    try {
+      const d = await api(`/api/profiles?${params}`);
+      setProfiles(d.profiles || []);
+      setPageInfo(
+        d.pagination || { page: 1, pages: 1, total: (d.profiles || []).length },
+      );
+      setPage(targetPage);
+    } catch (error) {
+      setProfiles([]);
+      setPageInfo({ page: 1, pages: 1, total: 0 });
+      setNotice(error.message || "Unable to load profiles.");
+    }
   }
   async function loadPublicPlans() {
     try {
