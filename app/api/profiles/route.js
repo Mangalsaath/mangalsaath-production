@@ -94,7 +94,10 @@ export async function GET(request) {
       user: { role: "member", status: "active", ...(excludedUserIds.length ? { id: { notIn: excludedUserIds } } : {}) },
       age: { gte: ageMin, lte: ageMax },
       height: { gte: heightMin, lte: heightMax },
-      photoModerationStatus: "approved",
+      OR: [
+        { isDemoProfile: true },
+        { isDemoProfile: false, photoModerationStatus: "approved" },
+      ],
       ...(city !== "Any" ? { city } : {}),
       ...(state !== "Any" ? { state } : {}),
       ...(religion !== "Any" ? { religion } : {}),
