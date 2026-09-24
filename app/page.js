@@ -609,25 +609,31 @@ export default function Home() {
     if (days === 1) return "Accepted Yesterday";
     return `Accepted ${days} days ago`;
   }
-  async function loadProfiles(targetPage = page) {
+  async function loadProfiles(targetPage = page, overrides = {}) {
+    const filters = {
+      query, city, stateFilter, religion, casteFilter, educationFilter,
+      professionFilter, genderFilter, maritalStatus, ageMin, ageMax,
+      heightMin, heightMax, verified, sort,
+      ...overrides,
+    };
     const params = new URLSearchParams();
-    if (query) params.set("q", query);
-    if (city !== "Any") params.set("city", city);
-    if (stateFilter !== "Any") params.set("state", stateFilter);
-    if (religion !== "Any") params.set("religion", religion);
-    if (casteFilter !== "Any") params.set("caste", casteFilter);
-    if (educationFilter !== "Any") params.set("education", educationFilter);
-    if (professionFilter !== "Any") params.set("profession", professionFilter);
-    if (genderFilter !== "Any") params.set("gender", genderFilter);
-    if (maritalStatus !== "Any") params.set("maritalStatus", maritalStatus);
-    if (ageMin) params.set("ageMin", ageMin);
-    if (ageMax) params.set("ageMax", ageMax);
-    if (heightMin) params.set("heightMin", heightMin);
-    if (heightMax) params.set("heightMax", heightMax);
-    if (verified) params.set("verified", "true");
-    params.set("sort", sort);
+    if (filters.query) params.set("q", filters.query);
+    if (filters.city !== "Any") params.set("city", filters.city);
+    if (filters.stateFilter !== "Any") params.set("state", filters.stateFilter);
+    if (filters.religion !== "Any") params.set("religion", filters.religion);
+    if (filters.casteFilter !== "Any") params.set("caste", filters.casteFilter);
+    if (filters.educationFilter !== "Any") params.set("education", filters.educationFilter);
+    if (filters.professionFilter !== "Any") params.set("profession", filters.professionFilter);
+    if (filters.genderFilter !== "Any") params.set("gender", filters.genderFilter);
+    if (filters.maritalStatus !== "Any") params.set("maritalStatus", filters.maritalStatus);
+    if (filters.ageMin) params.set("ageMin", filters.ageMin);
+    if (filters.ageMax) params.set("ageMax", filters.ageMax);
+    if (filters.heightMin) params.set("heightMin", filters.heightMin);
+    if (filters.heightMax) params.set("heightMax", filters.heightMax);
+    if (filters.verified) params.set("verified", "true");
+    params.set("sort", filters.sort);
     params.set("page", String(targetPage));
-    params.set("limit", "6");
+    params.set("limit", "12");
     const d = await api(`/api/profiles?${params}`);
     setProfiles(d.profiles || []);
     setPageInfo(
@@ -1003,7 +1009,23 @@ export default function Home() {
     setVerified(false);
     setSort("match");
     setPage(1);
-    setTimeout(() => loadProfiles(1), 0);
+    loadProfiles(1, {
+      query: "",
+      city: "Any",
+      stateFilter: "Any",
+      religion: "Any",
+      casteFilter: "Any",
+      educationFilter: "Any",
+      professionFilter: "Any",
+      genderFilter: "Any",
+      maritalStatus: "Any",
+      ageMin: "",
+      ageMax: "",
+      heightMin: "",
+      heightMax: "",
+      verified: false,
+      sort: "match",
+    });
   }
   function startMessage(p) {
     if (!user) {
