@@ -247,6 +247,52 @@ export async function POST(request) {
       );
     }
 
+    if (action === "bulk-show" || action === "bulk-hide") {
+      const rawIds = Array.isArray(body.profileIds) ? body.profileIds : [];
+      const profileIds = [...new Set(rawIds.map((value) => cleanText(value, 64)).filter(Boolean))].slice(0, 100);
+      if (!profileIds.length) {
+        return NextResponse.json({ error: "Select at least one AI profile." }, { status: 400 });
+      }
+
+      const records = await prisma.memberProfile.findMany({
+        where: { id: { in: profileIds }, isDemoProfile: true },
+        select: { id: true, mangalNumber: true },
+      });
+      if (records.length !== profileIds.length) {
+        return NextResponse.json({ error: "One or more selected AI profiles were not found." }, { status: 404 });
+      }
+
+      const enable = action === "bulk-show";
+      const now = new Date();
+      await prisma.memberProfile.updateMany({
+        where: { id: { in: profileIds }, isDemoProfile: true },
+        data: {
+          demoVisible: enable,
+          demoVisibleFrom: enable ? now : null,
+          demoVisibleUntil: null,
+        },
+      });
+
+      await appendAdminAudit({
+        actorUserId: admin.id,
+        action: enable ? "demo.profile.bulk_shown" : "demo.profile.bulk_hidden",
+        entityType: "MemberProfile",
+        entityId: null,
+        metadata: {
+          count: records.length,
+          profileIds,
+          mangalsaathIds: records.map(mangalsaathIdForProfile),
+        },
+        request,
+      });
+
+      return NextResponse.json({
+        message: `${records.length} AI profile(s) ${enable ? "enabled" : "disabled"}.`,
+        updatedIds: profileIds,
+        demoVisible: enable,
+      });
+    }
+
     const profileId = cleanText(body.profileId, 64);
     const profile = profileId
       ? await prisma.memberProfile.findUnique({ where: { id: profileId }, include: { user: true } })
