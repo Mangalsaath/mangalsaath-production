@@ -327,9 +327,16 @@ export default function Home() {
     [interestBusy, setInterestBusy] = useState(""),
     [verificationBusy, setVerificationBusy] = useState(false),
     [religion, setReligion] = useState("Any"),
+    [stateFilter, setStateFilter] = useState("Any"),
+    [casteFilter, setCasteFilter] = useState("Any"),
+    [educationFilter, setEducationFilter] = useState("Any"),
+    [professionFilter, setProfessionFilter] = useState("Any"),
+    [genderFilter, setGenderFilter] = useState("Any"),
     [maritalStatus, setMaritalStatus] = useState("Any"),
     [ageMin, setAgeMin] = useState(""),
     [ageMax, setAgeMax] = useState(""),
+    [heightMin, setHeightMin] = useState(""),
+    [heightMax, setHeightMax] = useState(""),
     [sort, setSort] = useState("match"),
     [page, setPage] = useState(1),
     [pageInfo, setPageInfo] = useState({ page: 1, pages: 1, total: 0 }),
@@ -606,10 +613,17 @@ export default function Home() {
     const params = new URLSearchParams();
     if (query) params.set("q", query);
     if (city !== "Any") params.set("city", city);
+    if (stateFilter !== "Any") params.set("state", stateFilter);
     if (religion !== "Any") params.set("religion", religion);
+    if (casteFilter !== "Any") params.set("caste", casteFilter);
+    if (educationFilter !== "Any") params.set("education", educationFilter);
+    if (professionFilter !== "Any") params.set("profession", professionFilter);
+    if (genderFilter !== "Any") params.set("gender", genderFilter);
     if (maritalStatus !== "Any") params.set("maritalStatus", maritalStatus);
     if (ageMin) params.set("ageMin", ageMin);
     if (ageMax) params.set("ageMax", ageMax);
+    if (heightMin) params.set("heightMin", heightMin);
+    if (heightMax) params.set("heightMax", heightMax);
     if (verified) params.set("verified", "true");
     params.set("sort", sort);
     params.set("page", String(targetPage));
@@ -744,7 +758,7 @@ export default function Home() {
   }, []);
   useEffect(() => {
     loadProfiles(1);
-  }, [city, verified, religion, maritalStatus, sort]);
+  }, [city, stateFilter, verified, religion, casteFilter, educationFilter, professionFilter, genderFilter, maritalStatus, sort]);
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
     setOpenMenu("");
@@ -975,12 +989,20 @@ export default function Home() {
   function resetFilters() {
     setQuery("");
     setCity("Any");
+    setStateFilter("Any");
     setReligion("Any");
+    setCasteFilter("Any");
+    setEducationFilter("Any");
+    setProfessionFilter("Any");
+    setGenderFilter("Any");
     setMaritalStatus("Any");
     setAgeMin("");
     setAgeMax("");
+    setHeightMin("");
+    setHeightMax("");
     setVerified(false);
     setSort("match");
+    setPage(1);
     setTimeout(() => loadProfiles(1), 0);
   }
   function startMessage(p) {
@@ -3336,6 +3358,41 @@ export default function Home() {
                 </select>
               </label>
               <label>
+                State
+                <select value={stateFilter} onChange={(e) => setStateFilter(e.target.value)}>
+                  <option>Any</option>
+                  {stateOptions.map((item) => <option key={item}>{item}</option>)}
+                </select>
+              </label>
+              <label>
+                Gender
+                <select value={genderFilter} onChange={(e) => setGenderFilter(e.target.value)}>
+                  <option>Any</option>
+                  {genderOptions.map((item) => <option key={item}>{item}</option>)}
+                </select>
+              </label>
+              <label>
+                Caste / Community
+                <select value={casteFilter} onChange={(e) => setCasteFilter(e.target.value)}>
+                  <option>Any</option>
+                  {casteOptions.map((item) => <option key={item}>{item}</option>)}
+                </select>
+              </label>
+              <label>
+                Education
+                <select value={educationFilter} onChange={(e) => setEducationFilter(e.target.value)}>
+                  <option>Any</option>
+                  {educationOptions.map((item) => <option key={item}>{item}</option>)}
+                </select>
+              </label>
+              <label>
+                Profession
+                <select value={professionFilter} onChange={(e) => setProfessionFilter(e.target.value)}>
+                  <option>Any</option>
+                  {professionOptions.map((item) => <option key={item}>{item}</option>)}
+                </select>
+              </label>
+              <label>
                 Marital status
                 <select
                   value={maritalStatus}
@@ -3365,6 +3422,26 @@ export default function Home() {
                   max="80"
                   value={ageMax}
                   onChange={(e) => setAgeMax(e.target.value)}
+                />
+              </label>
+              <label>
+                Minimum height (cm)
+                <input
+                  type="number"
+                  min="100"
+                  max="250"
+                  value={heightMin}
+                  onChange={(e) => setHeightMin(e.target.value)}
+                />
+              </label>
+              <label>
+                Maximum height (cm)
+                <input
+                  type="number"
+                  min="100"
+                  max="250"
+                  value={heightMax}
+                  onChange={(e) => setHeightMax(e.target.value)}
                 />
               </label>
               <label>
