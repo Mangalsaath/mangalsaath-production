@@ -6,8 +6,7 @@ export async function GET() {
   return NextResponse.json(
     {
       enabled: control.enabled === true,
-      viewerAccessRequired:
-        process.env.NODE_ENV === "production" ? true : control.viewerAccessRequired !== false,
+      viewerAccessRequired: control.viewerAccessRequired === true,
       accessVersion: control.accessVersion || "v1",
     },
     { headers: { "Cache-Control": "no-store" } },

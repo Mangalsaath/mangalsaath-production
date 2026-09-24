@@ -64,8 +64,7 @@ export async function proxy(request) {
 
   if (!state?.enabled) return NextResponse.next();
 
-  const accessRequired =
-    process.env.NODE_ENV === "production" ? true : state.viewerAccessRequired !== false;
+  const accessRequired = state.viewerAccessRequired === true;
   if (!accessRequired) return NextResponse.next();
 
   const token = request.cookies.get(DEMO_COOKIE)?.value || "";
