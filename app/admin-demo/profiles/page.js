@@ -21,7 +21,9 @@ async function api(path, options = {}) {
 const emptyForm = {
   firstName: "", lastName: "", gender: "", dateOfBirth: "", placeOfBirth: "", timeOfBirth: "",
   age: "", maritalStatus: "", height: "", religion: "", caste: "", subCaste: "", gotra: "",
-  education: "", profession: "", annualCtc: "", brothersMarried: "", brothersUnmarried: "",
+  education: "", profession: "", annualCtc: "", fatherName: "", fatherStatus: "", fatherOccupation: "",
+  motherName: "", motherStatus: "", motherOccupation: "", familyType: "", familyLocation: "", familyValues: "",
+  brothersDetails: "", sistersDetails: "", brothersMarried: "", brothersUnmarried: "",
   sistersMarried: "", sistersUnmarried: "", country: "India", state: "", city: "", about: "",
   partnerAgeMin: "", partnerAgeMax: "", partnerReligion: "", partnerCaste: "", partnerLocation: "",
   partnerMaritalStatus: "", partnerEducation: "", partnerProfession: "",
@@ -47,6 +49,17 @@ function profileToForm(profile) {
     education: profile.education || "",
     profession: profile.profession || "",
     annualCtc: profile.annualCtc || "",
+    fatherName: profile.fatherName || "",
+    fatherStatus: profile.fatherStatus || "",
+    fatherOccupation: profile.fatherOccupation || "",
+    motherName: profile.motherName || "",
+    motherStatus: profile.motherStatus || "",
+    motherOccupation: profile.motherOccupation || "",
+    familyType: profile.familyType || "",
+    familyLocation: profile.familyLocation || "",
+    familyValues: profile.familyValues || "",
+    brothersDetails: profile.brothersDetails || "",
+    sistersDetails: profile.sistersDetails || "",
     brothersMarried: profile.brothersMarried ?? 0,
     brothersUnmarried: profile.brothersUnmarried ?? 0,
     sistersMarried: profile.sistersMarried ?? 0,
@@ -359,11 +372,26 @@ export default function EditAiProfilesPage() {
 
           <h3 style={s.h3}>Family details</h3>
           <div style={s.grid}>
+            <Field label="Father's name" value={form.fatherName} set={(v) => setField("fatherName", v)} />
+            <Field label="Father's status" value={form.fatherStatus} set={(v) => setField("fatherStatus", v)} />
+            <Field label="Father's occupation" value={form.fatherOccupation} set={(v) => setField("fatherOccupation", v)} />
+            <Field label="Mother's name" value={form.motherName} set={(v) => setField("motherName", v)} />
+            <Field label="Mother's status" value={form.motherStatus} set={(v) => setField("motherStatus", v)} />
+            <Field label="Mother's occupation" value={form.motherOccupation} set={(v) => setField("motherOccupation", v)} />
+            <Field label="Family type" value={form.familyType} set={(v) => setField("familyType", v)} />
+            <Field label="Family location" value={form.familyLocation} set={(v) => setField("familyLocation", v)} />
+            <Field label="Family values" value={form.familyValues} set={(v) => setField("familyValues", v)} />
             <Field label="Brothers married" type="number" value={form.brothersMarried} set={(v) => setField("brothersMarried", v)} />
             <Field label="Brothers unmarried" type="number" value={form.brothersUnmarried} set={(v) => setField("brothersUnmarried", v)} />
             <Field label="Sisters married" type="number" value={form.sistersMarried} set={(v) => setField("sistersMarried", v)} />
             <Field label="Sisters unmarried" type="number" value={form.sistersUnmarried} set={(v) => setField("sistersUnmarried", v)} />
           </div>
+          <label style={s.label}>Brothers details
+            <textarea style={{ ...s.input, minHeight: 90 }} value={form.brothersDetails} onChange={(e) => setField("brothersDetails", e.target.value)} />
+          </label>
+          <label style={s.label}>Sisters details
+            <textarea style={{ ...s.input, minHeight: 90 }} value={form.sistersDetails} onChange={(e) => setField("sistersDetails", e.target.value)} />
+          </label>
 
           <label style={s.label}>About
             <textarea style={{ ...s.input, minHeight: 110 }} value={form.about} onChange={(e) => setField("about", e.target.value)} />

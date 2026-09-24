@@ -332,3 +332,18 @@ a{color:var(--wine);font-weight:700}.topbar{padding:14px 6%;box-shadow:0 8px 28p
 @media(max-width:430px){
   .profileMainPhoto{height:390px}.profileQuickFacts{grid-template-columns:1fr}.profileDefinitionGrid{grid-template-columns:1fr}.profileDefinitionGrid dt{margin-top:7px}.profileDefinitionGrid dd{padding-bottom:6px;border-bottom:1px solid #f1e7ea}.profileAccordionBody dl{grid-template-columns:1fr}.profileAccordionBody dt{margin-top:7px}.profileNameRow h1{font-size:1.65rem}
 }
+
+
+/* Complete Family Details */
+.familyDetailBody{display:grid;gap:16px;padding-top:16px}
+.familyDetailGrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.familyDetailGrid>section,.siblingDetailCards>section{border:1px solid #f0e3e6;border-radius:14px;background:#fffafb;padding:15px}
+.familyDetailGrid h4,.siblingDetailCards h4{margin:0 0 10px;color:#8d1f3d;font-size:1rem}
+.familyDetailGrid dl{display:grid;grid-template-columns:90px 1fr;gap:7px 10px;margin:0}
+.familyDetailGrid dt{color:#806c73;font-size:.84rem}
+.familyDetailGrid dd{margin:0;color:#3c3034;font-weight:650;overflow-wrap:anywhere}
+.siblingDetailCards{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.siblingDetailCards p{margin:7px 0 0;color:#5d4d53;line-height:1.55;white-space:pre-line}
+.siblingDetailCards .siblingCount{font-size:.82rem;font-weight:800;color:#8d1f3d}
+@media(max-width:900px){.familyDetailGrid{grid-template-columns:1fr 1fr}.familyDetailGrid>section:last-child{grid-column:1/-1}}
+@media(max-width:650px){.familyDetailGrid,.siblingDetailCards{grid-template-columns:1fr}.familyDetailGrid>section:last-child{grid-column:auto}}
