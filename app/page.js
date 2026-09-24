@@ -327,9 +327,16 @@ export default function Home() {
     [interestBusy, setInterestBusy] = useState(""),
     [verificationBusy, setVerificationBusy] = useState(false),
     [religion, setReligion] = useState("Any"),
+    [stateFilter, setStateFilter] = useState("Any"),
+    [casteFilter, setCasteFilter] = useState("Any"),
+    [educationFilter, setEducationFilter] = useState("Any"),
+    [professionFilter, setProfessionFilter] = useState("Any"),
+    [genderFilter, setGenderFilter] = useState("Any"),
     [maritalStatus, setMaritalStatus] = useState("Any"),
     [ageMin, setAgeMin] = useState(""),
     [ageMax, setAgeMax] = useState(""),
+    [heightMin, setHeightMin] = useState(""),
+    [heightMax, setHeightMax] = useState(""),
     [sort, setSort] = useState("match"),
     [page, setPage] = useState(1),
     [pageInfo, setPageInfo] = useState({ page: 1, pages: 1, total: 0 }),
@@ -602,18 +609,31 @@ export default function Home() {
     if (days === 1) return "Accepted Yesterday";
     return `Accepted ${days} days ago`;
   }
-  async function loadProfiles(targetPage = page) {
+  async function loadProfiles(targetPage = page, overrides = {}) {
+    const filters = {
+      query, city, stateFilter, religion, casteFilter, educationFilter,
+      professionFilter, genderFilter, maritalStatus, ageMin, ageMax,
+      heightMin, heightMax, verified, sort,
+      ...overrides,
+    };
     const params = new URLSearchParams();
-    if (query) params.set("q", query);
-    if (city !== "Any") params.set("city", city);
-    if (religion !== "Any") params.set("religion", religion);
-    if (maritalStatus !== "Any") params.set("maritalStatus", maritalStatus);
-    if (ageMin) params.set("ageMin", ageMin);
-    if (ageMax) params.set("ageMax", ageMax);
-    if (verified) params.set("verified", "true");
-    params.set("sort", sort);
+    if (filters.query) params.set("q", filters.query);
+    if (filters.city !== "Any") params.set("city", filters.city);
+    if (filters.stateFilter !== "Any") params.set("state", filters.stateFilter);
+    if (filters.religion !== "Any") params.set("religion", filters.religion);
+    if (filters.casteFilter !== "Any") params.set("caste", filters.casteFilter);
+    if (filters.educationFilter !== "Any") params.set("education", filters.educationFilter);
+    if (filters.professionFilter !== "Any") params.set("profession", filters.professionFilter);
+    if (filters.genderFilter !== "Any") params.set("gender", filters.genderFilter);
+    if (filters.maritalStatus !== "Any") params.set("maritalStatus", filters.maritalStatus);
+    if (filters.ageMin) params.set("ageMin", filters.ageMin);
+    if (filters.ageMax) params.set("ageMax", filters.ageMax);
+    if (filters.heightMin) params.set("heightMin", filters.heightMin);
+    if (filters.heightMax) params.set("heightMax", filters.heightMax);
+    if (filters.verified) params.set("verified", "true");
+    params.set("sort", filters.sort);
     params.set("page", String(targetPage));
-    params.set("limit", "6");
+    params.set("limit", "12");
     const d = await api(`/api/profiles?${params}`);
     setProfiles(d.profiles || []);
     setPageInfo(
@@ -744,7 +764,7 @@ export default function Home() {
   }, []);
   useEffect(() => {
     loadProfiles(1);
-  }, [city, verified, religion, maritalStatus, sort]);
+  }, [city, stateFilter, verified, religion, casteFilter, educationFilter, professionFilter, genderFilter, maritalStatus, sort]);
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "smooth" });
     setOpenMenu("");
@@ -975,13 +995,37 @@ export default function Home() {
   function resetFilters() {
     setQuery("");
     setCity("Any");
+    setStateFilter("Any");
     setReligion("Any");
+    setCasteFilter("Any");
+    setEducationFilter("Any");
+    setProfessionFilter("Any");
+    setGenderFilter("Any");
     setMaritalStatus("Any");
     setAgeMin("");
     setAgeMax("");
+    setHeightMin("");
+    setHeightMax("");
     setVerified(false);
     setSort("match");
-    setTimeout(() => loadProfiles(1), 0);
+    setPage(1);
+    loadProfiles(1, {
+      query: "",
+      city: "Any",
+      stateFilter: "Any",
+      religion: "Any",
+      casteFilter: "Any",
+      educationFilter: "Any",
+      professionFilter: "Any",
+      genderFilter: "Any",
+      maritalStatus: "Any",
+      ageMin: "",
+      ageMax: "",
+      heightMin: "",
+      heightMax: "",
+      verified: false,
+      sort: "match",
+    });
   }
   function startMessage(p) {
     if (!user) {
@@ -3336,6 +3380,41 @@ export default function Home() {
                 </select>
               </label>
               <label>
+                State
+                <select value={stateFilter} onChange={(e) => setStateFilter(e.target.value)}>
+                  <option>Any</option>
+                  {stateOptions.map((item) => <option key={item}>{item}</option>)}
+                </select>
+              </label>
+              <label>
+                Gender
+                <select value={genderFilter} onChange={(e) => setGenderFilter(e.target.value)}>
+                  <option>Any</option>
+                  {genderOptions.map((item) => <option key={item}>{item}</option>)}
+                </select>
+              </label>
+              <label>
+                Caste / Community
+                <select value={casteFilter} onChange={(e) => setCasteFilter(e.target.value)}>
+                  <option>Any</option>
+                  {casteOptions.map((item) => <option key={item}>{item}</option>)}
+                </select>
+              </label>
+              <label>
+                Education
+                <select value={educationFilter} onChange={(e) => setEducationFilter(e.target.value)}>
+                  <option>Any</option>
+                  {educationOptions.map((item) => <option key={item}>{item}</option>)}
+                </select>
+              </label>
+              <label>
+                Profession
+                <select value={professionFilter} onChange={(e) => setProfessionFilter(e.target.value)}>
+                  <option>Any</option>
+                  {professionOptions.map((item) => <option key={item}>{item}</option>)}
+                </select>
+              </label>
+              <label>
                 Marital status
                 <select
                   value={maritalStatus}
@@ -3365,6 +3444,26 @@ export default function Home() {
                   max="80"
                   value={ageMax}
                   onChange={(e) => setAgeMax(e.target.value)}
+                />
+              </label>
+              <label>
+                Minimum height (cm)
+                <input
+                  type="number"
+                  min="100"
+                  max="250"
+                  value={heightMin}
+                  onChange={(e) => setHeightMin(e.target.value)}
+                />
+              </label>
+              <label>
+                Maximum height (cm)
+                <input
+                  type="number"
+                  min="100"
+                  max="250"
+                  value={heightMax}
+                  onChange={(e) => setHeightMax(e.target.value)}
                 />
               </label>
               <label>
