@@ -29,6 +29,17 @@ async function main() {
   await addColumnIfMissing(databaseName, "mangalNumber", "INT NULL");
   await addColumnIfMissing(databaseName, "demoClientReference", "VARCHAR(120) NULL");
   await addColumnIfMissing(databaseName, "demoInternalNotes", "TEXT NULL");
+  await addColumnIfMissing(databaseName, "fatherName", "VARCHAR(180) NULL");
+  await addColumnIfMissing(databaseName, "fatherStatus", "VARCHAR(60) NULL");
+  await addColumnIfMissing(databaseName, "fatherOccupation", "VARCHAR(180) NULL");
+  await addColumnIfMissing(databaseName, "motherName", "VARCHAR(180) NULL");
+  await addColumnIfMissing(databaseName, "motherStatus", "VARCHAR(60) NULL");
+  await addColumnIfMissing(databaseName, "motherOccupation", "VARCHAR(180) NULL");
+  await addColumnIfMissing(databaseName, "familyType", "VARCHAR(80) NULL");
+  await addColumnIfMissing(databaseName, "familyLocation", "VARCHAR(180) NULL");
+  await addColumnIfMissing(databaseName, "familyValues", "VARCHAR(120) NULL");
+  await addColumnIfMissing(databaseName, "brothersDetails", "TEXT NULL");
+  await addColumnIfMissing(databaseName, "sistersDetails", "TEXT NULL");
 }
 
 main()
