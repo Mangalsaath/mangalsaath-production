@@ -122,7 +122,7 @@ export async function GET(request) {
       { subCaste: { contains: q } }, { profession: { contains: q } }, { education: { contains: q } }
     ] });
     const where = {
-      user: { role: "member", status: "active", ...(excludedUserIds.length ? { id: { notIn: excludedUserIds } } : {}) },
+      user: { role: "member", ...(isAdmin ? {} : { status: "active" }), ...(excludedUserIds.length ? { id: { notIn: excludedUserIds } } : {}) },
       ...(ageMin !== null || ageMax !== null ? { age: { ...(ageMin !== null ? { gte: ageMin } : {}), ...(ageMax !== null ? { lte: ageMax } : {}) } } : {}),
       ...(heightMin !== null || heightMax !== null ? { height: { ...(heightMin !== null ? { gte: heightMin } : {}), ...(heightMax !== null ? { lte: heightMax } : {}) } } : {}),
       OR: [
@@ -134,7 +134,9 @@ export async function GET(request) {
             { OR: [{ demoVisibleUntil: null }, { demoVisibleUntil: { gt: new Date() } }] },
           ],
         },
-        { isDemoProfile: false, photoModerationStatus: "approved" },
+        ...(isAdmin
+          ? [{ isDemoProfile: false }]
+          : [{ isDemoProfile: false, photoModerationStatus: "approved" }]),
       ],
       ...(city !== "Any" ? { city } : {}),
       ...(state !== "Any" ? { state } : {}),
@@ -152,7 +154,10 @@ export async function GET(request) {
     let publishable = candidates.map((record) => {
       const profile = { ...record, dateOfBirth: record.dateOfBirth?.toISOString().slice(0, 10), photos: Array.isArray(record.photos) ? record.photos : [] };
       return { profile, user: record.user, compatibility: calculateCompatibility(viewerRecord, profile) };
-    }).filter(({ profile, user }) => isProfilePublishable(profile, user));
+    }).filter(({ profile, user }) => {
+      if (isAdmin && !profile.isDemoProfile) return true;
+      return isProfilePublishable(profile, user);
+    });
     if (sort === "match") publishable.sort((a, b) => b.compatibility.score - a.compatibility.score || new Date(b.profile.updatedAt) - new Date(a.profile.updatedAt));
     const total = publishable.length;
     const pages = Math.max(1, Math.ceil(total / limit));
