@@ -3642,7 +3642,10 @@ export default function Home() {
 
             <aside className="profileCompatibilityCard">
               <h3>Profile Compatibility</h3>
-              <div className="compatibilityRing">
+              <div
+                className="compatibilityRing"
+                style={{ "--score": selected.matchScore || matchScore(selected) }}
+              >
                 <strong>{selected.matchScore || matchScore(selected)}%</strong>
                 <span>Match</span>
               </div>
